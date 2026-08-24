@@ -1,0 +1,16 @@
+# Python environment & cache
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Large Datasets & SQLite Databases
+data/raw/*.csv
+data/processed/*.csv
+data/civic_records.db
+
+# System files
+.DS_Store
+Thumbs.db
