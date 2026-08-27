@@ -1,8 +1,12 @@
+import os
 import requests
 import urllib.parse
 from datetime import datetime
+from dotenv import load_dotenv
 
-AQICN_TOKEN = "f67762d5b7d7bb1892415cc3ea8865e61f2abd3d"
+# Load environment variables from .env file
+load_dotenv()
+AQICN_TOKEN = os.getenv("AQICN_TOKEN", "").strip()
 
 def calculate_cpcb_subindex_pm25(conc: float) -> int:
     """Official Indian CPCB Breakpoint Interpolation for PM2.5"""
@@ -99,7 +103,6 @@ def fetch_live_ground_sensor(lat: float, lon: float, fallback_name: str = "Chemb
     """
     Ingests live ground sensor feeds from physical CAAQMS stations via WAQI.
     """
-    token = AQICN_TOKEN.strip()
     headers = {"User-Agent": "Pravaah-AirQualityPlatform/1.0"}
     
     city_kw = "mumbai"
@@ -109,47 +112,48 @@ def fetch_live_ground_sensor(lat: float, lon: float, fallback_name: str = "Chemb
                 city_kw = c
                 break
 
-    urls_to_poll = [
-        f"https://api.waqi.info/feed/{city_kw}/?token={token}",
-        f"https://api.waqi.info/feed/geo:{lat};{lon}/?token={token}"
-    ]
+    if AQICN_TOKEN:
+        urls_to_poll = [
+            f"https://api.waqi.info/feed/{city_kw}/?token={AQICN_TOKEN}",
+            f"https://api.waqi.info/feed/geo:{lat};{lon}/?token={AQICN_TOKEN}"
+        ]
 
-    for u in urls_to_poll:
-        try:
-            res = requests.get(u, headers=headers, timeout=6)
-            if res.status_code == 200:
-                json_data = res.json()
-                if json_data.get("status") == "ok":
-                    data = json_data.get("data", {})
-                    iaqi = data.get("iaqi", {})
-                    station_city = data.get("city", {})
+        for u in urls_to_poll:
+            try:
+                res = requests.get(u, headers=headers, timeout=6)
+                if res.status_code == 200:
+                    json_data = res.json()
+                    if json_data.get("status") == "ok":
+                        data = json_data.get("data", {})
+                        iaqi = data.get("iaqi", {})
+                        station_city = data.get("city", {})
 
-                    raw_pm25 = iaqi.get("pm25", {}).get("v")
-                    raw_pm10 = iaqi.get("pm10", {}).get("v")
-                    raw_aqi = data.get("aqi", 0)
-                    
-                    pm25_val = float(raw_pm25) if raw_pm25 is not None else round(raw_aqi * 0.45, 1)
-                    pm10_val = float(raw_pm10) if raw_pm10 is not None else round(raw_aqi * 0.75, 1)
+                        raw_pm25 = iaqi.get("pm25", {}).get("v")
+                        raw_pm10 = iaqi.get("pm10", {}).get("v")
+                        raw_aqi = data.get("aqi", 0)
+                        
+                        pm25_val = float(raw_pm25) if raw_pm25 is not None else round(raw_aqi * 0.45, 1)
+                        pm10_val = float(raw_pm10) if raw_pm10 is not None else round(raw_aqi * 0.75, 1)
 
-                    sub_pm25 = calculate_cpcb_subindex_pm25(pm25_val)
-                    sub_pm10 = calculate_cpcb_subindex_pm10(pm10_val)
-                    cpcb_aqi = max(sub_pm25, sub_pm10)
+                        sub_pm25 = calculate_cpcb_subindex_pm25(pm25_val)
+                        sub_pm10 = calculate_cpcb_subindex_pm10(pm10_val)
+                        cpcb_aqi = max(sub_pm25, sub_pm10)
 
-                    return {
-                        "location": station_city.get("name", fallback_name),
-                        "lat": lat,
-                        "lon": lon,
-                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M IST"),
-                        "aqi": int(raw_aqi),
-                        "cpcb_aqi": int(cpcb_aqi),
-                        "pm25": round(pm25_val, 1),
-                        "pm10": round(pm10_val, 1),
-                        "no2": round(float(iaqi.get("no2", {}).get("v", 14.2)), 1),
-                        "so2": round(float(iaqi.get("so2", {}).get("v", 6.8)), 1),
-                        "dominant_pollutant": data.get("dominentpol", "PM2.5").upper(),
-                        "source": "Physical CPCB/MPCB CAAQMS Station"
-                    }
-        except Exception:
-            continue
+                        return {
+                            "location": station_city.get("name", fallback_name),
+                            "lat": lat,
+                            "lon": lon,
+                            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M IST"),
+                            "aqi": int(raw_aqi),
+                            "cpcb_aqi": int(cpcb_aqi),
+                            "pm25": round(pm25_val, 1),
+                            "pm10": round(pm10_val, 1),
+                            "no2": round(float(iaqi.get("no2", {}).get("v", 14.2)), 1),
+                            "so2": round(float(iaqi.get("so2", {}).get("v", 6.8)), 1),
+                            "dominant_pollutant": data.get("dominentpol", "PM2.5").upper(),
+                            "source": "Physical CPCB/MPCB CAAQMS Station"
+                        }
+            except Exception:
+                continue
 
     return fetch_live_air_quality_by_coords(lat, lon, fallback_name)

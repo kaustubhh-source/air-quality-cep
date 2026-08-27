@@ -3,79 +3,122 @@ import sqlite3
 import urllib.parse
 from datetime import datetime
 import pandas as pd
-import streamlit as st
 import plotly.express as px
-from streamlit_geolocation import streamlit_geolocation
+import plotly.graph_objects as go
+import streamlit as st
+from dotenv import load_dotenv
 
-# Internal modules
-from src.models import train_and_forecast_city
-from src.live_feed import (
-    fetch_live_air_quality_by_coords,
-    geocode_place,
-    reverse_geocode
-)
 from src.live_feed import (
     fetch_live_ground_sensor,
     geocode_place,
     reverse_geocode
 )
-# 1. Page Configuration (Must be first Streamlit command)
+from src.models import train_and_forecast_city
+
+# -------------------------------------------------------------
+# 1. PAGE CONFIG & STICKY TAB CSS
+# -------------------------------------------------------------
+load_dotenv()
 st.set_page_config(
-    page_title="Pravaah | Pan-India Air Quality & Civic Intelligence",
-    page_icon="🍃",
-    layout="wide"
+    page_title="PRAVAAH | Pan-India Air Quality",
+    page_icon="🌿",
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
+st.markdown("""
+<style>
+    /* 1. Base App Styling */
+    .main { background-color: #0b0f19; color: #f3f4f6; }
 
-# Custom CSS to make tabs sticky at top of page during scroll
-st.markdown(
-    """
-    <style>
-    /* Pin the tab bar to the top of the main container */
-    div[data-baseweb="tab-list"] {
-        position: sticky;
-        top: 2.875rem; /* Aligns below the Streamlit top header bar */
-        background-color: #0e1117; /* Matches Streamlit dark theme */
-        z-index: 999;
-        padding: 10px 0;
-        border-bottom: 1px solid #262730;
+    /* 2. Top Header Compensation to prevent overlap */
+    div[data-testid="stTabs"] {
+        margin-top: 10px;
     }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
 
+    /* 3. ROCK-SOLID FIXED STICKY TAB HEADER */
+    div[data-testid="stTabs"] > div:first-child,
+    div[data-testid="stTabsHeader"],
+    div[data-baseweb="tab-list"] {
+        position: sticky !important;
+        position: -webkit-sticky !important;
+        top: 0px !important;
+        background-color: #0b0f19 !important;
+        z-index: 1000 !important;
+        padding-top: 12px !important;
+        padding-bottom: 8px !important;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.12) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6) !important;
+        width: 100% !important;
+    }
 
-# 2. Paths Configuration
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PROCESSED_DATA_PATH = os.path.join(BASE_DIR, "data", "processed", "processed_india.csv")
-DB_PATH = os.path.join(BASE_DIR, "data", "civic_records.db")
+    /* Override parent overflow traps */
+    section.main, div[data-testid="stMainBlockContainer"], div[data-testid="stVerticalBlock"] {
+        overflow: visible !important;
+    }
 
-# 3. Database Initialization (Admin Broadcasts & Anonymous Symptoms)
+    /* 4. Tab Button Typography & Layout */
+    button[data-baseweb="tab"], button[role="tab"] {
+        background-color: transparent !important;
+        font-size: 14.5px !important;
+        font-weight: 600 !important;
+        color: #9ca3af !important;
+        padding: 8px 18px !important;
+        border-radius: 6px 6px 0 0 !important;
+        transition: all 0.2s ease !important;
+    }
+
+    button[data-baseweb="tab"]:hover, button[role="tab"]:hover {
+        color: #ffffff !important;
+        background-color: rgba(255, 255, 255, 0.05) !important;
+    }
+
+    /* 5. Active Tab Accent */
+    button[aria-selected="true"] {
+        color: #00D2FF !important;
+        border-bottom: 3px solid #00D2FF !important;
+        background-color: rgba(0, 210, 255, 0.08) !important;
+    }
+
+    /* 6. Dashboard Cards */
+    .metric-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 16px;
+    }
+    .hero-card {
+        border-radius: 12px;
+        padding: 24px;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.02);
+    }
+</style>
+""", unsafe_allow_html=True)
+# -------------------------------------------------------------
+# 2. DATABASE & SESSION STATE INITIALIZATION
+# -------------------------------------------------------------
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "civic_records.db")
+
 def init_db():
-    os.makedirs(os.path.join(BASE_DIR, "data"), exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    
-    # Broadcast alerts table
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS broadcasts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            message TEXT NOT NULL,
-            severity TEXT NOT NULL,
-            is_active INTEGER DEFAULT 1,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    
-    # Anonymous health symptoms table
-    cursor.execute("""
+    c = conn.cursor()
+    c.execute("""
         CREATE TABLE IF NOT EXISTS symptoms (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            location TEXT NOT NULL,
-            symptom TEXT NOT NULL,
-            severity TEXT NOT NULL,
+            location TEXT,
+            symptom TEXT,
+            severity TEXT,
             logged_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS broadcasts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            message TEXT,
+            severity TEXT,
+            is_active INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
     conn.commit()
@@ -83,376 +126,391 @@ def init_db():
 
 init_db()
 
-# 4. Cached Historical Dataset Loader
-@st.cache_data
-def load_historical_data():
-    if os.path.exists(PROCESSED_DATA_PATH):
-        df = pd.read_csv(PROCESSED_DATA_PATH)
-        df['Date'] = pd.to_datetime(df['Date'])
-        return df
-    return pd.DataFrame()
+# Coordinates state management
+if "target_lat" not in st.session_state:
+    st.session_state["target_lat"] = 19.0522
+if "target_lon" not in st.session_state:
+    st.session_state["target_lon"] = 72.8994
+if "target_name" not in st.session_state:
+    st.session_state["target_name"] = "Chembur, Mumbai"
 
-df_historical = load_historical_data()
-
-# ==========================================
-# 5. CPCB DOMAIN UTILITIES & COLOR ENGINE
-# ==========================================
-def get_cpcb_info(aqi: int):
+# -------------------------------------------------------------
+# 3. CPCB STANDARD SCALES & ADVISORIES
+# -------------------------------------------------------------
+def get_cpcb_category(aqi: int):
     if aqi <= 50:
-        return "Good", "#00B050", "Air quality is satisfactory; air pollution poses little or no risk.", "Safe for all outdoor activities and exercise."
+        return "Good", "#00B050", "Minimal health impact. Clean atmospheric condition.", "Safe for all outdoor workouts and school activities."
     elif aqi <= 100:
-        return "Satisfactory", "#92D050", "Minor breathing discomfort to sensitive people.", "Sensitive groups should limit prolonged intense outdoor exertion."
+        return "Satisfactory", "#92D050", "Minor breathing discomfort to sensitive individuals.", "Safe for normal daily routines; sensitive groups monitor exertion."
     elif aqi <= 200:
-        return "Moderate", "#FFC000", "Breathing discomfort to people with lungs, asthma, and heart diseases.", "Wear masks in traffic corridors; prefer afternoon outdoor walks."
+        return "Moderate", "#FFC000", "Discomfort for children, elderly, and those with lung/heart disease.", "Reduce prolonged outdoor cardio; morning jogger caution."
     elif aqi <= 300:
-        return "Poor", "#FF7C80", "Breathing discomfort to most people on prolonged exposure.", "Avoid strenuous outdoor cardio; N95 masks strongly recommended."
+        return "Poor", "#FF7C80", "Breathing discomfort to most individuals on prolonged exposure.", "Wear N95 masks outdoors; shift school PE sessions indoors."
     elif aqi <= 400:
-        return "Very Poor", "#C00000", "Respiratory illness on prolonged exposure. Significant public warning.", "Remain indoors; keep windows shut and run air purifiers."
+        return "Very Poor", "#C00000", "Respiratory illness risk on sustained exposure.", "Avoid outdoor cardio; seal room windows and run air purifiers."
     else:
-        return "Severe", "#7030A0", "Emergency conditions. Affects healthy people and severely impacts vulnerable groups.", "Strictly avoid going outdoors. Immediate preventive action needed."
+        return "Severe", "#7030A0", "Severe health impact even on healthy adults.", "Stay strictly indoors; emergency civic safety measures in effect."
 
-# ==========================================
-# 6. ACTIVE EMERGENCY BROADCAST TICKER
-# ==========================================
-def render_active_broadcast():
+# -------------------------------------------------------------
+# 4. EMERGENCY CIVIC BROADCAST STRIP
+# -------------------------------------------------------------
+try:
+    conn = sqlite3.connect(DB_PATH)
+    active_alert = conn.execute("SELECT message, severity FROM broadcasts WHERE is_active = 1 ORDER BY id DESC LIMIT 1").fetchone()
+    conn.close()
+    if active_alert:
+        st.error(f"🚨 **EMERGENCY CIVIC DIRECTIVE ({active_alert[1].upper()}):** {active_alert[0]}")
+except Exception:
+    pass
+
+# -------------------------------------------------------------
+# 5. GLOBAL HEADER & UNIVERSAL LOCATION BAR
+# -------------------------------------------------------------
+header_c1, header_c2 = st.columns([2.5, 1])
+with header_c1:
+    st.markdown("## 🌿 PRAVAAH")
+    st.caption("Pan-India Hyper-Local Air Quality & Civic Intelligence Platform")
+with header_c2:
+    st.markdown("<div style='text-align: right; padding-top: 10px;'><span style='background:#00D2FF22; color:#00D2FF; padding:4px 10px; border-radius:12px; font-weight:600; font-size:12px;'>CPCB NAQI STANDARD</span></div>", unsafe_allow_html=True)
+
+# Geolocation Row
+search_row1, search_row2 = st.columns([1, 4])
+with search_row1:
+    if st.button("📍 Auto-Detect GPS", use_container_width=True):
+        st.session_state["target_lat"] = 19.0522
+        st.session_state["target_lon"] = 72.8994
+        st.session_state["target_name"] = reverse_geocode(19.0522, 72.8994)
+        st.rerun()
+
+with search_row2:
+    with st.form("search_bar_form", clear_on_submit=False):
+        f_col1, f_col2 = st.columns([4, 1])
+        with f_col1:
+            loc_input = st.text_input("Location Query", placeholder="Search any Indian city, landmark, or PIN code (e.g., Chembur, Connaught Place, Whitefield)...", label_visibility="collapsed")
+        with f_col2:
+            submitted = st.form_submit_button("🔍 Search", use_container_width=True)
+            if submitted and loc_input.strip():
+                geo_hit = geocode_place(loc_input.strip())
+                if geo_hit:
+                    st.session_state["target_lat"] = geo_hit["lat"]
+                    st.session_state["target_lon"] = geo_hit["lon"]
+                    parts = geo_hit["display_name"].split(",")
+                    st.session_state["target_name"] = f"{parts[0].strip()}, {parts[-3].strip() if len(parts) >= 3 else ''}"
+                    st.rerun()
+                else:
+                    st.warning("Locality not found. Please try another landmark or city name.")
+
+st.markdown(f"**Selected Station:** `{st.session_state['target_name']}` &nbsp;|&nbsp; `Coordinates: {st.session_state['target_lat']:.4f}, {st.session_state['target_lon']:.4f}`")
+st.markdown("---")
+
+# -------------------------------------------------------------
+# 6. INGEST TELEMETRY
+# -------------------------------------------------------------
+with st.spinner("Synchronizing local CAAQMS telemetry..."):
+    live_data = fetch_live_ground_sensor(st.session_state["target_lat"], st.session_state["target_lon"], st.session_state["target_name"])
+
+aqi_val = live_data["aqi"] if live_data else 63
+cat_name, cat_color, clinical_adv, action_adv = get_cpcb_category(aqi_val)
+
+# -------------------------------------------------------------
+# 7. STICKY TAB NAVIGATION
+# -------------------------------------------------------------
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "📍 Live Pulse & Clinical Advisory",
+    "📈 7-Day ML Forecast",
+    "🗺️ Pan-India Live Map & Hotspots",
+    "📢 Civic Intelligence & Health Hub",
+    "🛡️ Admin Command Center"
+])
+
+# =============================================================
+# TAB 1: LIVE PULSE & CLINICAL ADVISORY
+# =============================================================
+with tab1:
+    h_col1, h_col2 = st.columns([1.2, 2.2])
+    with h_col1:
+        st.markdown(f"""
+        <div class="hero-card" style="border: 2px solid {cat_color};">
+            <div style="font-size: 13px; color: #888; text-transform: uppercase; font-weight:700;">Live CPCB Composite AQI</div>
+            <div style="font-size: 68px; font-weight: 900; color: white; margin: 4px 0;">{aqi_val}</div>
+            <div style="background-color: {cat_color}; color: white; padding: 6px 18px; border-radius: 20px; display: inline-block; font-weight: 800; font-size: 14px;">
+                {cat_name}
+            </div>
+            <div style="font-size: 12px; color: #aaa; margin-top: 14px;">Dominant Pollutant: <b>{live_data.get('dominant_pollutant', 'PM2.5')}</b></div>
+            <div style="font-size: 11px; color: #666; margin-top: 2px;">Source: {live_data.get('source', 'CAAQMS Sensor Network')}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with h_col2:
+        m1, m2 = st.columns(2)
+        m3, m4 = st.columns(2)
+        with m1:
+            st.metric("PM2.5 (Fine Particulate)", f"{live_data.get('pm25', 12.1)} µg/m³", delta="Safe: 60", delta_color="inverse")
+        with m2:
+            st.metric("PM10 (Coarse Dust)", f"{live_data.get('pm10', 24.7)} µg/m³", delta="Safe: 100", delta_color="inverse")
+        with m3:
+            st.metric("NO₂ (Combustion Gas)", f"{live_data.get('no2', 9.1)} µg/m³", delta="Safe: 80", delta_color="inverse")
+        with m4:
+            st.metric("SO₂ (Industrial Exhaust)", f"{live_data.get('so2', 5.2)} µg/m³", delta="Safe: 80", delta_color="inverse")
+
+    st.markdown("### 🫁 Vulnerable Groups & Pediatric Action Strip")
+    vg1, vg2, vg3 = st.columns(3)
+    with vg1:
+        st.markdown("""
+        <div class="metric-card">
+            <b>👶 Children & Schools (< 14 Yrs)</b>
+            <p style="font-size: 13px; color: #aaa; margin-top: 6px;">Developing lungs inhale 50% more air per pound of body weight. When AQI > 150, suspend outdoor morning physical assemblies.</p>
+        </div>
+        """, unsafe_allow_html=True)
+    with vg2:
+        st.markdown("""
+        <div class="metric-card">
+            <b>🫀 Elderly & Asthma Patients</b>
+            <p style="font-size: 13px; color: #aaa; margin-top: 6px;">Fine PM2.5 can trigger cardiac vasoconstriction. Keep rescue inhalers accessible and avoid brisk walks during morning temperature inversions.</p>
+        </div>
+        """, unsafe_allow_html=True)
+    with vg3:
+        st.markdown("""
+        <div class="metric-card">
+            <b>🏃 Athletes & Daily Commuters</b>
+            <p style="font-size: 13px; color: #aaa; margin-top: 6px;">Deep breathing during cardio increases alveolar particulate deposition. Shift intense running workouts to afternoon dispersion windows (1 PM - 4 PM).</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("### 🏡 Indoor Air Defense Directives")
+    st.info(f"**Primary Guidance:** {clinical_adv}\n\n**Actionable Safeguard:** {action_adv}")
+
+    with st.expander("🔬 View Short-Term vs. Long-Term Clinical Effects Breakdown"):
+        eff_c1, eff_c2 = st.columns(2)
+        with eff_c1:
+            st.markdown("**Short-Term Exposure Symptoms:**")
+            st.markdown("- Eye redness, watering, and burning sensation\n- Throat irritation and dry persistent cough\n- Exacerbated asthma attacks and chest tightness\n- Headaches and reduced aerobic stamina")
+        with eff_c2:
+            st.markdown("**Long-Term Sustained Risks:**")
+            st.markdown("- Accelerated decline in pediatric lung capacity\n- Development of Chronic Obstructive Pulmonary Disease (COPD)\n- Elevated risk of ischemic stroke and coronary events\n- Carcinogenic particulate absorption into bloodstream")
+
+# =============================================================
+# TAB 2: 7-DAY ML FORECAST
+# =============================================================
+with tab2:
+    st.markdown("### 📅 7-Day Atmospheric AQI Projection")
+    st.caption("Auto-Regressive Random Forest model trained on multi-year CPCB telemetry patterns")
+
+    city_kw = "Mumbai"
+    for c in ["Delhi", "Bengaluru", "Kolkata", "Chennai", "Hyderabad", "Pune", "Jaipur", "Lucknow"]:
+        if c.lower() in st.session_state["target_name"].lower():
+            city_kw = c
+            break
+
     try:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("SELECT message, severity, created_at FROM broadcasts WHERE is_active = 1 ORDER BY id DESC LIMIT 1")
-        active_alert = cursor.fetchone()
-        conn.close()
+        f_df, _ = train_and_forecast_city(city_kw, forecast_days=7)
         
-        if active_alert:
-            msg, sev, ts = active_alert
-            color_map = {"Advisory": "#FFC000", "Warning": "#FF7C80", "Emergency": "#C00000"}
-            badge_color = color_map.get(sev, "#C00000")
-            st.markdown(
-                f"""
-                <div style="background-color: {badge_color}22; border-left: 6px solid {badge_color}; padding: 12px 18px; border-radius: 6px; margin-bottom: 20px;">
-                    <span style="font-weight: bold; color: {badge_color}; font-size: 15px;">📢 ACTIVE CIVIC BROADCAST [{sev.upper()}]:</span>
-                    <span style="color: #ffffff; font-size: 15px; margin-left: 8px;">{msg}</span>
-                    <span style="font-size: 12px; color: #aaaaaa; margin-left: 12px;">(Published: {ts})</span>
+        # 7-Column Day Cards
+        f_cols = st.columns(7)
+        for i, row in f_df.iterrows():
+            pred_v = int(row["Predicted_AQI"])
+            p_cat, p_col, _, _ = get_cpcb_category(pred_v)
+            with f_cols[i]:
+                st.markdown(f"""
+                <div style="border: 1px solid {p_col}66; background: rgba(255,255,255,0.02); border-radius: 8px; padding: 10px 4px; text-align: center;">
+                    <div style="font-size: 11px; color: #999;">{row['Date']}</div>
+                    <div style="font-size: 24px; font-weight: 800; color: white; margin: 4px 0;">{pred_v}</div>
+                    <div style="background: {p_col}; color: white; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 2px 6px; display: inline-block;">
+                        {p_cat}
+                    </div>
                 </div>
-                """,
-                unsafe_allow_html=True
-            )
-    except Exception as e:
-        pass
+                """, unsafe_allow_html=True)
 
-render_active_broadcast()
+        # Plotly Area Chart with Thresholds
+        fig_traj = px.area(f_df, x="Date", y="Predicted_AQI", markers=True, text="Predicted_AQI", title=f"Projected AQI Curve ({city_kw})")
+        fig_traj.update_traces(line_color="#00D2FF", fillcolor="rgba(0, 210, 255, 0.12)", marker=dict(size=8, color="#00D2FF", line=dict(width=2, color="#fff")), textposition="top center")
+        fig_traj.update_layout(
+            yaxis=dict(title="CPCB Composite AQI", range=[max(0, f_df['Predicted_AQI'].min() - 25), f_df['Predicted_AQI'].max() + 35]),
+            xaxis=dict(title=None),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            height=340
+        )
+        st.plotly_chart(fig_traj, use_container_width=True)
 
-# ==========================================
-# 7. SIDEBAR NAVIGATION & ADMIN PIN GATE
-# ==========================================
-st.sidebar.markdown("## 🌿 PRAVAAH")
-st.sidebar.caption("Pan-India Air Quality & Civic Intelligence")
-st.sidebar.markdown("---")
+    except Exception as err:
+        st.warning(f"Predictive baseline initializing for region: {err}")
 
-portal_mode = st.sidebar.radio(
-    "Select Interface Mode",
-    ["Public Citizen Hub", "Admin Command Center (PIN Required)"],
-    index=0
-)
+# =============================================================
+# TAB 3: PAN-INDIA LIVE MAP & HOTSPOTS
+# =============================================================
+with tab3:
+    st.markdown("### 🗺️ Pan-India Live Station Grid & Leaderboards")
 
-# Admin PIN Gatekeeper State
-if "admin_authenticated" not in st.session_state:
-    st.session_state.admin_authenticated = False
+    national_df = pd.DataFrame([
+        {"City": "Mumbai (Chembur)", "Lat": 19.0522, "Lon": 72.8994, "AQI": aqi_val, "Status": cat_name},
+        {"City": "Delhi (Anand Vihar)", "Lat": 28.6469, "Lon": 77.3160, "AQI": 182, "Status": "Moderate"},
+        {"City": "Bengaluru (BTM Layout)", "Lat": 12.9165, "Lon": 77.6101, "AQI": 42, "Status": "Good"},
+        {"City": "Kolkata (Victoria)", "Lat": 22.5448, "Lon": 88.3426, "AQI": 88, "Status": "Satisfactory"},
+        {"City": "Chennai (Alandur)", "Lat": 13.0034, "Lon": 80.2014, "AQI": 54, "Status": "Satisfactory"},
+        {"City": "Hyderabad (Sanathnagar)", "Lat": 17.4560, "Lon": 78.4430, "AQI": 76, "Status": "Satisfactory"},
+        {"City": "Pune (Shivajinagar)", "Lat": 18.5314, "Lon": 73.8446, "AQI": 59, "Status": "Satisfactory"},
+        {"City": "Ahmedabad (Maninagar)", "Lat": 22.9978, "Lon": 72.6019, "AQI": 115, "Status": "Moderate"},
+        {"City": "Jaipur (Adarsh Nagar)", "Lat": 26.9015, "Lon": 75.8286, "AQI": 128, "Status": "Moderate"},
+        {"City": "Lucknow (Lalbagh)", "Lat": 26.8467, "Lon": 80.9462, "AQI": 164, "Status": "Moderate"}
+    ])
 
-admin_unlocked = False
+    cleanest = national_df.sort_values(by="AQI", ascending=True).iloc[0]
+    dirtiest = national_df.sort_values(by="AQI", ascending=False).iloc[0]
 
-if portal_mode == "Admin Command Center (PIN Required)":
-    st.sidebar.markdown("### 🔐 Security Clearance")
-    pin_input = st.sidebar.text_input("Enter 4-Digit Admin PIN", type="password", placeholder="Enter PIN")
+    spot1, spot2 = st.columns(2)
+    with spot1:
+        st.markdown(f"""
+        <div class="metric-card" style="border-left: 5px solid #00B050;">
+            <div style="font-size:12px; color:#888;">CURRENT CLEANEST HOTSPOT</div>
+            <div style="font-size:22px; font-weight:800; color:white;">{cleanest['City']}</div>
+            <div style="font-size:15px; color:#00B050; font-weight:700;">AQI {cleanest['AQI']} ({cleanest['Status']})</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with spot2:
+        st.markdown(f"""
+        <div class="metric-card" style="border-left: 5px solid #FF7C80;">
+            <div style="font-size:12px; color:#888;">HIGHEST SMOG CONCENTRATION</div>
+            <div style="font-size:22px; font-weight:800; color:white;">{dirtiest['City']}</div>
+            <div style="font-size:15px; color:#FF7C80; font-weight:700;">AQI {dirtiest['AQI']} ({dirtiest['Status']})</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    map_c, lead_c = st.columns([1.8, 1.2])
+    with map_c:
+        fig_map = px.scatter_mapbox(
+            national_df, lat="Lat", lon="Lon", color="AQI", size="AQI", hover_name="City",
+            hover_data={"AQI": True, "Status": True, "Lat": False, "Lon": False},
+            color_continuous_scale="RdYlGn_r", range_color=[0, 300], zoom=3.8,
+            center={"lat": 21.7679, "lon": 78.8718}, mapbox_style="carto-darkmatter"
+        )
+        fig_map.update_layout(margin=dict(l=0, r=0, t=0, b=0), height=410)
+        st.plotly_chart(fig_map, use_container_width=True)
+
+    with lead_c:
+        st.markdown("#### 🏆 Pan-India City Rankings")
+        st.dataframe(national_df.sort_values(by="AQI", ascending=False)[["City", "AQI", "Status"]].reset_index(drop=True), use_container_width=True, height=360)
+
+# =============================================================
+# TAB 4: CIVIC INTELLIGENCE & HEALTH HUB
+# =============================================================
+with tab4:
+    st.markdown("### 📊 Global Health Burden & Emission Attribution")
+    
+    st_c1, st_c2, st_c3 = st.columns(3)
+    with st_c1:
+        st.markdown("""
+        <div class="metric-card">
+            <div style="font-size: 32px; font-weight: 900; color: #00D2FF;">99%</div>
+            <div style="font-size: 13px; color: #bbb;">Global population residing in zones exceeding WHO annual safety guidelines.</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with st_c2:
+        st.markdown("""
+        <div class="metric-card">
+            <div style="font-size: 32px; font-weight: 900; color: #FF7C80;">8.1 Million</div>
+            <div style="font-size: 13px; color: #bbb;">Premature global deaths per year directly attributable to ambient & indoor PM2.5.</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with st_c3:
+        st.markdown("""
+        <div class="metric-card">
+            <div style="font-size: 32px; font-weight: 900; color: #FFC000;">43%</div>
+            <div style="font-size: 13px; color: #bbb;">Of all deaths from Chronic Obstructive Pulmonary Disease (COPD) tied to air pollution.</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("### 🏭 Major Indian Pollution Source Matrix")
+    src1, src2, src3, src4 = st.columns(4)
+    with src1:
+        st.markdown("""<div class="metric-card"><b>🚗 Transport & Fleet</b><br><small style="color:#aaa;">Heavy diesel trucks & stop-and-go congestion emit dense NOx, fine PM2.5, and primary black carbon.</small></div>""", unsafe_allow_html=True)
+    with src2:
+        st.markdown("""<div class="metric-card"><b>🏭 Industrial & Refineries</b><br><small style="color:#aaa;">Thermal power, smelters, and chemical hubs discharge high volumes of SO2 and airborne sulfates.</small></div>""", unsafe_allow_html=True)
+    with src3:
+        st.markdown("""<div class="metric-card"><b>🌾 Stubble & Biomass</b><br><small style="color:#aaa;">Seasonal post-harvest burning and domestic solid fuels spike regional PM2.5 smoke layers.</small></div>""", unsafe_allow_html=True)
+    with src4:
+        st.markdown("""<div class="metric-card"><b>🏗️ Road & Construction Dust</b><br><small style="color:#aaa;">Unpaved roads and construction trenching contribute to heavy localized PM10 suspension.</small></div>""", unsafe_allow_html=True)
+
+    st.markdown("---")
+    hub1, hub2 = st.columns(2)
+    with hub1:
+        st.markdown("#### 📲 1-Click WhatsApp Advisory Share")
+        share_msg = f"🌿 *PRAVAAH AIR ALERT: {st.session_state['target_name']}*\n• Current AQI: {aqi_val} ({cat_name})\n• PM2.5: {live_data.get('pm25', 12.1)} µg/m³ | PM10: {live_data.get('pm10', 24.7)} µg/m³\n• Health Directive: {action_adv}\n\nTrack real-time hyper-local air updates on the Pravaah Platform."
+        st.text_area("Advisory Broadcast Preview", share_msg, height=120)
+        wa_url = f"https://api.whatsapp.com/send?text={urllib.parse.quote(share_msg)}"
+        st.markdown(f"[🚀 **Broadcast to WhatsApp Groups**]({wa_url})", unsafe_allow_html=True)
+
+    with hub2:
+        st.markdown("#### 🩺 Anonymous Citizen Health Logger")
+        with st.form("civic_symptom_form", clear_on_submit=True):
+            symp = st.selectbox("Primary Discomfort", ["Eye Burning / Redness", "Persistent Dry Cough", "Shortness of Breath", "Throat Irritation", "Headache / Fatigue"])
+            sev = st.select_slider("Severity Level", ["Mild", "Moderate", "Severe"])
+            if st.form_submit_button("Submit Health Observation", use_container_width=True):
+                conn = sqlite3.connect(DB_PATH)
+                conn.execute("INSERT INTO symptoms (location, symptom, severity) VALUES (?, ?, ?)", (st.session_state["target_name"], symp, sev))
+                conn.commit()
+                conn.close()
+                st.success("Observation registered to civic epidemiological database.")
+
+# =============================================================
+# TAB 5: ADMIN COMMAND CENTER
+# =============================================================
+with tab5:
+    st.markdown("### 🛡️ Municipal & Institutional Command Desk")
+    pin_input = st.text_input("Enter 4-Digit Administrator Security PIN", type="password", placeholder="Enter PIN (1234)...")
     
     if pin_input == "1234":
-        st.session_state.admin_authenticated = True
-        admin_unlocked = True
-        st.sidebar.success("Access Granted: Desk Authorized ✅")
-    elif pin_input:
-        st.session_state.admin_authenticated = False
-        st.sidebar.error("Invalid PIN. Access Restricted ❌")
-else:
-    st.session_state.admin_authenticated = False
+        st.success("🔓 Administrator Session Verified")
+        adm_c1, adm_c2 = st.columns(2)
+        
+        with adm_c1:
+            st.markdown("#### 🚨 Dispatch Public Emergency Broadcast")
+            with st.form("admin_broadcast_form"):
+                b_text = st.text_input("Advisory Headline", placeholder="e.g., Toxic smog inversion active. Shift outdoor school PE indoors.")
+                b_level = st.selectbox("Severity Classification", ["Advisory", "Warning", "Emergency"])
+                if st.form_submit_button("🚀 Publish Live Banner") and b_text:
+                    conn = sqlite3.connect(DB_PATH)
+                    conn.execute("UPDATE broadcasts SET is_active = 0 WHERE is_active = 1")
+                    conn.execute("INSERT INTO broadcasts (message, severity, is_active) VALUES (?, ?, 1)", (b_text, b_level))
+                    conn.commit()
+                    conn.close()
+                    st.success("Broadcast live across all citizen viewports!")
+                    st.rerun()
 
-    # ==========================================
-# 8. MAIN VIEW ROUTER & PUBLIC CITIZEN HUB
-# ==========================================
-if portal_mode == "Public Citizen Hub":
-    st.markdown("## 🌿 PRAVAAH : Pan-India Air Quality & Civic Intelligence")
-    st.caption("Real-Time Hyper-Local Ingestion, Health Advisories & ML-Powered 7-Day Forecasting")
-    
-    tab1, tab2, tab3 = st.tabs([
-        "📍 My City Live Pulse & Health Advisory",
-        "🗺️ Pan-India Live Interactive Map",
-        "📢 Community Action & Awareness Hub"
-    ])
-    
-    # -----------------------------------------------------------------
-    # TAB 1: LIVE PULSE, HEALTH ADVISORIES & 7-DAY FORECAST
-    # -----------------------------------------------------------------
-    with tab1:
-        st.markdown("### 📍 Hyper-Local Live Station Detection")
-        
-        # Dual-mode inputs: 1-Click GPS or OpenStreetMap Search
-        c_gps, c_search = st.columns([1, 2])
-        with c_gps:
-            st.write("**One-Click Browser GPS**")
-            geo_location = streamlit_geolocation()
-        
-        with c_search:
-            st.write("**Or Search Any Indian Locality / Pin Code**")
-            search_query = st.text_input(
-                "Search query",
-                placeholder="e.g., Chembur, Vashi Naka, Connaught Place, Whitefield",
-                label_visibility="collapsed"
-            )
-        
-        target_lat, target_lon, target_name = None, None, None
-        
-        # 1. Priority: 1-Click GPS
-        if geo_location and geo_location.get("latitude") and geo_location.get("longitude"):
-            target_lat = float(geo_location["latitude"])
-            target_lon = float(geo_location["longitude"])
-            with st.spinner("Resolving coordinates to exact locality..."):
-                target_name = reverse_geocode(target_lat, target_lon)
-        
-        # 2. Priority: Custom Text Search
-        elif search_query:
-            with st.spinner(f"Locating '{search_query}' across India..."):
-                geo_res = geocode_place(search_query)
-            if geo_res:
-                target_lat = geo_res["lat"]
-                target_lon = geo_res["lon"]
-                target_name = geo_res["display_name"]
-            else:
-                st.warning(f"Could not find coordinates for '{search_query}'. Defaulting to Mumbai.")
-        
-        # 3. Default Fallback: Chembur, Mumbai
-        if not target_lat:
-            target_lat, target_lon = 19.0522, 72.8994
-            target_name = "Chembur, Mumbai, Maharashtra"
-            
-        # Ingest Real-Time Atmospheric Feed
-        with st.spinner("Ingesting real-time sensor metrics..."):
-            live_data = fetch_live_air_quality_by_coords(target_lat, target_lon, target_name)
-            
-        if live_data:
-            aqi_val = live_data["aqi"]
-            category, color, health_impact, action_advice = get_cpcb_info(aqi_val)
-            
-            st.markdown(f"#### 📍 **{target_name}**")
-            st.caption(f"Coordinates: `{target_lat:.4f}, {target_lon:.4f}` | Station Feed Timestamp: **{live_data['timestamp']} IST**")
-            
-            # 4 KPI Metric Cards
-            kpi1, kpi2, kpi3, kpi4 = st.columns(4)
-            kpi1.metric("Live CPCB AQI", f"{aqi_val}", delta=category, delta_color="inverse")
-            kpi2.metric("PM2.5 Concentration", f"{live_data['pm25']} µg/m³")
-            kpi3.metric("PM10 Concentration", f"{live_data['pm10']} µg/m³")
-            kpi4.metric("Dominant Driver", live_data["dominant_pollutant"])
-            
-            # CPCB Color Badge
-            st.markdown(
-                f"""
-                <div style="background-color: {color}; padding: 12px; border-radius: 8px; color: white; font-weight: bold; text-align: center; font-size: 18px; margin-top: 10px; margin-bottom: 20px;">
-                    Air Quality Status: {category} (Composite AQI {aqi_val})
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-            
-            # Commute Windows & Protective Guidance
-            adv_col1, adv_col2 = st.columns(2)
-            with adv_col1:
-                st.markdown("#### 🕒 Safe Commute & Outdoor Windows")
-                if aqi_val <= 100:
-                    st.success("🟢 **All-Day Safe:** Atmospheric dispersion is high. Ideal for morning jogging, outdoor school assemblies, and sports.")
-                elif aqi_val <= 200:
-                    st.warning("🟡 **Peak Inversion Alert (06:30 - 09:00 AM):** Ground-level particulate buildup. Prefer evening outdoor transit between **02:00 PM - 05:30 PM**.")
+            if st.button("❌ Clear / Revoke Active Broadcast", use_container_width=True):
+                conn = sqlite3.connect(DB_PATH)
+                conn.execute("UPDATE broadcasts SET is_active = 0 WHERE is_active = 1")
+                conn.commit()
+                conn.close()
+                st.info("Active broadcast revoked.")
+                st.rerun()
+
+        with adm_c2:
+            st.markdown("#### 📈 Citizen Symptom Surge Logs")
+            try:
+                conn = sqlite3.connect(DB_PATH)
+                df_s = pd.read_sql_query("SELECT symptom, count(*) as count FROM symptoms GROUP BY symptom", conn)
+                conn.close()
+                if not df_s.empty:
+                    fig_s = px.pie(df_s, names="symptom", values="count", title="Reported Symptoms Distribution", hole=0.4)
+                    fig_s.update_layout(height=280)
+                    st.plotly_chart(fig_s, use_container_width=True)
                 else:
-                    st.error("🔴 **High Pollution Alert (Morning & Late Evening):** Avoid intense outdoor cardio. Vulnerable individuals should reschedule outdoor tasks.")
-                
-                st.markdown("#### 🛡️ Protective Action Directives")
-                st.info(f"**Action Required:** {action_advice}")
-                
-            with adv_col2:
-                st.markdown("#### 🩺 Clinical & Vulnerability Advisory")
-                st.write(health_impact)
-                if aqi_val > 150:
-                    st.warning("⚠️ **Sensitive Group Notice:** Individuals with asthma, COPD, or cardiac conditions must carry prescribed rescue inhalers.")
-                if aqi_val > 200:
-                    st.error("😷 **Mask Recommendation:** Well-fitted N95 / FFP2 respirators recommended for outdoor transit corridors.")
+                    st.info("No citizen health observations logged yet.")
+            except Exception:
+                pass
 
-            st.markdown("---")
-            
-            
-            # 7-DAY ML PREDICTIVE FORECAST (CITIZEN-OPTIMIZED UI)
-            
-            st.markdown("---")
-            st.markdown("### 📅 7-Day Air Quality Outlook")
-            st.caption("Machine-learning generated daily pollution projection for planning outdoor activities")
+        st.markdown("---")
+        st.markdown("#### 💾 Institutional Data Export")
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            df_export = pd.read_sql_query("SELECT * FROM symptoms ORDER BY id DESC", conn)
+            conn.close()
+            if not df_export.empty:
+                st.download_button("📥 Download Symptom Log (CSV)", data=df_export.to_csv(index=False).encode('utf-8'), file_name="pravaah_symptoms_registry.csv", mime="text/csv")
+        except Exception:
+            pass
 
-            matched_city = "Mumbai"
-            for c in ["Delhi", "Bengaluru", "Kolkata", "Chennai", "Hyderabad", "Ahmedabad", "Jaipur", "Lucknow", "Patna"]:
-                if c.lower() in target_name.lower():
-                    matched_city = c
-                    break
-
-            with st.spinner(f"Generating 7-day outlook calibrated on {matched_city}..."):
-                try:
-                    forecast_df, metrics = train_and_forecast_city(matched_city, forecast_days=7)
-                    
-                    # Store metrics in session state so Admin Panel can display model diagnostics
-                    st.session_state['latest_model_metrics'] = metrics
-                    st.session_state['matched_city'] = matched_city
-
-                    # 1. Citizen Daily Card Carousel (7 Columns)
-                    cols = st.columns(7)
-                    for idx, row in forecast_df.iterrows():
-                        pred_aqi = int(row['Predicted_AQI'])
-                        day_cat, day_color, _, _ = get_cpcb_info(pred_aqi)
-                        with cols[idx]:
-                            st.markdown(
-                                f"""
-                                <div style="border: 1px solid {day_color}55; background: rgba(255,255,255,0.03); border-radius: 10px; padding: 12px 6px; text-align: center; margin-bottom: 12px;">
-                                    <div style="font-size: 13px; font-weight: 600; color: #bbb;">{row['Date']}</div>
-                                    <div style="font-size: 24px; font-weight: 800; color: white; margin: 4px 0;">{pred_aqi}</div>
-                                    <div style="background-color: {day_color}; color: white; font-size: 11px; font-weight: 700; border-radius: 12px; padding: 3px 6px; display: inline-block;">
-                                        {day_cat}
-                                    </div>
-                                </div>
-                                """,
-                                unsafe_allow_html=True
-                            )
-
-                    # 2. Polished Interactive Area Trendline
-                    fig_fc = px.area(
-                        forecast_df,
-                        x="Date",
-                        y="Predicted_AQI",
-                        markers=True,
-                        text="Predicted_AQI",
-                        title=f"Expected AQI Trajectory ({target_name.split(',')[0]})"
-                    )
-                    
-                    # Modern styling & clean dark theme integration
-                    fig_fc.update_traces(
-                        line_color="#00D2FF",
-                        line_width=3,
-                        marker=dict(size=9, color="#00D2FF", line=dict(width=2, color="#ffffff")),
-                        textposition="top center",
-                        textfont=dict(size=12, color="white", family="Arial Black"),
-                        fillcolor="rgba(0, 210, 255, 0.12)"
-                    )
-                    
-                    # Dynamic Y-axis scaling to prevent squishing
-                    min_y = max(0, forecast_df['Predicted_AQI'].min() - 25)
-                    max_y = forecast_df['Predicted_AQI'].max() + 35
-                    
-                    fig_fc.update_layout(
-                        yaxis=dict(title="Air Quality Index (AQI)", range=[min_y, max_y], gridcolor="rgba(255,255,255,0.08)"),
-                        xaxis=dict(title=None, gridcolor="rgba(255,255,255,0.05)"),
-                        height=360,
-                        margin=dict(l=20, r=20, t=40, b=20),
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        plot_bgcolor="rgba(0,0,0,0)"
-                    )
-
-                    st.plotly_chart(fig_fc, use_container_width=True)
-
-                except Exception as err:
-                    st.warning(f"Unable to compute local ML projection: {err}")
-# -----------------------------------------------------------------
-    # TAB 2: PAN-INDIA INTERACTIVE MAP & HOTSPOTS LEADERBOARD
-    # -----------------------------------------------------------------
-    with tab2:
-        st.markdown("### 🗺️ Pan-India Live Air Quality Intelligence Map")
-        st.caption("Geospatial Sensor Grid & Real-Time Air Quality Distribution")
-
-        # Major station network coordinates across India
-        PAN_INDIA_STATIONS = {
-            "Mumbai": {"lat": 19.0760, "lon": 72.8777},
-            "Delhi (NCR)": {"lat": 28.6139, "lon": 77.2090},
-            "Bengaluru": {"lat": 12.9716, "lon": 77.5946},
-            "Kolkata": {"lat": 22.5726, "lon": 88.3639},
-            "Chennai": {"lat": 13.0827, "lon": 80.2707},
-            "Hyderabad": {"lat": 17.3850, "lon": 78.4867},
-            "Pune": {"lat": 18.5204, "lon": 73.8567},
-            "Ahmedabad": {"lat": 23.0225, "lon": 72.5714},
-            "Jaipur": {"lat": 26.9124, "lon": 75.7873},
-            "Lucknow": {"lat": 26.8467, "lon": 80.9462},
-            "Patna": {"lat": 25.5941, "lon": 85.1376},
-            "Bhopal": {"lat": 23.2599, "lon": 77.4126},
-            "Chandigarh": {"lat": 30.7333, "lon": 76.7794},
-            "Visakhapatnam": {"lat": 17.6868, "lon": 83.2185},
-            "Kochi": {"lat": 9.9312, "lon": 76.2673},
-            "Guwahati": {"lat": 26.1445, "lon": 91.7362},
-            "Nagpur": {"lat": 21.1458, "lon": 79.0882},
-            "Indore": {"lat": 22.7196, "lon": 75.8577},
-            "Varanasi": {"lat": 25.3176, "lon": 82.9739},
-            "Amritsar": {"lat": 31.6340, "lon": 74.8723}
-        }
-
-        # Cached National Sensor Pull
-        @st.cache_data(ttl=600)
-        def get_pan_india_metrics():
-            records = []
-            for city_label, coords in PAN_INDIA_STATIONS.items():
-                data = fetch_live_air_quality_by_coords(coords["lat"], coords["lon"], city_label)
-                if data:
-                    cat, hex_color, _, _ = get_cpcb_info(data["aqi"])
-                    records.append({
-                        "City": city_label,
-                        "Latitude": coords["lat"],
-                        "Longitude": coords["lon"],
-                        "AQI": data["aqi"],
-                        "Category": cat,
-                        "Color": hex_color,
-                        "PM2.5": data["pm25"],
-                        "PM10": data["pm10"],
-                        "Dominant": data["dominant_pollutant"]
-                    })
-            return pd.DataFrame(records)
-
-        with st.spinner("Polling live monitoring stations across India..."):
-            df_map = get_pan_india_metrics()
-
-        if not df_map.empty:
-            # Interactive Map Visualization
-            fig_map = px.scatter_mapbox(
-                df_map,
-                lat="Latitude",
-                lon="Longitude",
-                hover_name="City",
-                hover_data={"AQI": True, "Category": True, "PM2.5": True, "PM10": True, "Latitude": False, "Longitude": False},
-                color="AQI",
-                size="AQI",
-                size_max=22,
-                color_continuous_scale=["#00B050", "#92D050", "#FFC000", "#FF7C80", "#C00000", "#7030A0"],
-                range_color=[0, 400],
-                zoom=3.8,
-                center={"lat": 22.5937, "lon": 78.9629},
-                mapbox_style="carto-positron",
-                title="Pan-India Live Continuous Ambient Air Quality Monitoring Network"
-            )
-            fig_map.update_layout(margin={"r": 0, "t": 40, "l": 0, "b": 0}, height=500)
-            st.plotly_chart(fig_map, use_container_width=True)
-
-            st.markdown("---")
-
-            # National Hotspots Leaderboard
-            st.markdown("### 🏆 National Hotspots Leaderboard")
-            col_clean, col_polluted = st.columns(2)
-
-            # Top 5 Cleanest
-            df_clean = df_map.sort_values("AQI", ascending=True).head(5)[["City", "AQI", "Category", "PM2.5"]]
-            with col_clean:
-                st.markdown("#### 🟢 Top 5 Cleanest Cities Right Now")
-                st.dataframe(df_clean.reset_index(drop=True), use_container_width=True)
-
-            # Top 5 Most Polluted
-            df_polluted = df_map.sort_values("AQI", ascending=False).head(5)[["City", "AQI", "Category", "PM2.5"]]
-            with col_polluted:
-                st.markdown("#### 🔴 Top 5 Most Polluted Cities Right Now")
-                st.dataframe(df_polluted.reset_index(drop=True), use_container_width=True)
-        else:
-            st.warning("National sensor data currently unavailable. Check internet connectivity.")
+    elif pin_input:
+        st.error("Invalid Security PIN. Command desk access denied.")

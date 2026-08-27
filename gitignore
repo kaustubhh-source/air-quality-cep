@@ -14,3 +14,7 @@ data/civic_records.db
 # System files
 .DS_Store
 Thumbs.db
+.env
+.streamlit/secrets.toml
+__pycache__/
+*.pyc
