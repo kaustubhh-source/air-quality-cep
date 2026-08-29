@@ -11,7 +11,8 @@ from dotenv import load_dotenv
 from src.live_feed import (
     fetch_live_ground_sensor,
     geocode_place,
-    reverse_geocode
+    reverse_geocode,
+    fetch_pan_india_stations
 )
 from src.models import train_and_forecast_city
 
@@ -336,61 +337,94 @@ with tab2:
     except Exception as err:
         st.warning(f"Predictive baseline initializing for region: {err}")
 
+
 # =============================================================
 # TAB 3: PAN-INDIA LIVE MAP & HOTSPOTS
 # =============================================================
 with tab3:
-    st.markdown("### 🗺️ Pan-India Live Station Grid & Leaderboards")
+    st.markdown("### 🗺️ Pan-India Real-Time Station Network")
+    st.caption("Monitoring active CAAQMS telemetry stations spanning all Indian states & Union Territories")
 
-    national_df = pd.DataFrame([
-        {"City": "Mumbai (Chembur)", "Lat": 19.0522, "Lon": 72.8994, "AQI": aqi_val, "Status": cat_name},
-        {"City": "Delhi (Anand Vihar)", "Lat": 28.6469, "Lon": 77.3160, "AQI": 182, "Status": "Moderate"},
-        {"City": "Bengaluru (BTM Layout)", "Lat": 12.9165, "Lon": 77.6101, "AQI": 42, "Status": "Good"},
-        {"City": "Kolkata (Victoria)", "Lat": 22.5448, "Lon": 88.3426, "AQI": 88, "Status": "Satisfactory"},
-        {"City": "Chennai (Alandur)", "Lat": 13.0034, "Lon": 80.2014, "AQI": 54, "Status": "Satisfactory"},
-        {"City": "Hyderabad (Sanathnagar)", "Lat": 17.4560, "Lon": 78.4430, "AQI": 76, "Status": "Satisfactory"},
-        {"City": "Pune (Shivajinagar)", "Lat": 18.5314, "Lon": 73.8446, "AQI": 59, "Status": "Satisfactory"},
-        {"City": "Ahmedabad (Maninagar)", "Lat": 22.9978, "Lon": 72.6019, "AQI": 115, "Status": "Moderate"},
-        {"City": "Jaipur (Adarsh Nagar)", "Lat": 26.9015, "Lon": 75.8286, "AQI": 128, "Status": "Moderate"},
-        {"City": "Lucknow (Lalbagh)", "Lat": 26.8467, "Lon": 80.9462, "AQI": 164, "Status": "Moderate"}
-    ])
+    from src.live_feed import fetch_pan_india_stations
+    national_df = fetch_pan_india_stations()
 
     cleanest = national_df.sort_values(by="AQI", ascending=True).iloc[0]
     dirtiest = national_df.sort_values(by="AQI", ascending=False).iloc[0]
 
-    spot1, spot2 = st.columns(2)
+    spot1, spot2, spot3 = st.columns(3)
     with spot1:
         st.markdown(f"""
         <div class="metric-card" style="border-left: 5px solid #00B050;">
-            <div style="font-size:12px; color:#888;">CURRENT CLEANEST HOTSPOT</div>
-            <div style="font-size:22px; font-weight:800; color:white;">{cleanest['City']}</div>
-            <div style="font-size:15px; color:#00B050; font-weight:700;">AQI {cleanest['AQI']} ({cleanest['Status']})</div>
+            <div style="font-size:12px; color:#888;">NATIONWIDE CLEANEST STATION</div>
+            <div style="font-size:20px; font-weight:800; color:white;">{cleanest['City']}</div>
+            <div style="font-size:14px; color:#00B050; font-weight:700;">AQI {cleanest['AQI']} ({cleanest['Status']})</div>
         </div>
         """, unsafe_allow_html=True)
     with spot2:
         st.markdown(f"""
         <div class="metric-card" style="border-left: 5px solid #FF7C80;">
             <div style="font-size:12px; color:#888;">HIGHEST SMOG CONCENTRATION</div>
-            <div style="font-size:22px; font-weight:800; color:white;">{dirtiest['City']}</div>
-            <div style="font-size:15px; color:#FF7C80; font-weight:700;">AQI {dirtiest['AQI']} ({dirtiest['Status']})</div>
+            <div style="font-size:20px; font-weight:800; color:white;">{dirtiest['City']}</div>
+            <div style="font-size:14px; color:#FF7C80; font-weight:700;">AQI {dirtiest['AQI']} ({dirtiest['Status']})</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with spot3:
+        st.markdown(f"""
+        <div class="metric-card" style="border-left: 5px solid #00D2FF;">
+            <div style="font-size:12px; color:#888;">ACTIVE CAAQMS MONITORS</div>
+            <div style="font-size:20px; font-weight:800; color:white;">{len(national_df)} Stations Tracked</div>
+            <div style="font-size:14px; color:#00D2FF; font-weight:700;">Pan-India Coverage</div>
         </div>
         """, unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
-    map_c, lead_c = st.columns([1.8, 1.2])
-    with map_c:
-        fig_map = px.scatter_mapbox(
-            national_df, lat="Lat", lon="Lon", color="AQI", size="AQI", hover_name="City",
-            hover_data={"AQI": True, "Status": True, "Lat": False, "Lon": False},
-            color_continuous_scale="RdYlGn_r", range_color=[0, 300], zoom=3.8,
-            center={"lat": 21.7679, "lon": 78.8718}, mapbox_style="carto-darkmatter"
-        )
-        fig_map.update_layout(margin=dict(l=0, r=0, t=0, b=0), height=410)
-        st.plotly_chart(fig_map, use_container_width=True)
+    
+    # State Filter & Search
+    f_c1, f_c2 = st.columns([1, 2])
+    with f_c1:
+        state_list = ["All States"] + sorted(list(national_df["State"].unique()))
+        selected_state = st.selectbox("Filter By State/Region", state_list)
+    
+    filtered_df = national_df if selected_state == "All States" else national_df[national_df["State"] == selected_state]
 
+    map_c, lead_c = st.columns([2, 1.2])
+    with map_c:
+        # Version-safe Plotly Map generation
+    map_func = getattr(px, "scatter_map", getattr(px, "scatter_mapbox", None))
+    
+    if map_func:
+        # Check parameter style (map_style for Plotly 6+, mapbox_style for Plotly 5)
+        map_kwargs = {
+            "data_frame": filtered_df if 'filtered_df' in locals() else national_df,
+            "lat": "Lat",
+            "lon": "Lon",
+            "color": "AQI",
+            "size": "AQI",
+            "size_max": 18,
+            "hover_name": "City",
+            "hover_data": {"AQI": True, "Status": True, "Lat": False, "Lon": False},
+            "color_continuous_scale": "RdYlGn_r",
+            "range_color": [0, 300],
+            "zoom": 4.1,
+            "center": {"lat": 22.5937, "lon": 78.9629}
+        }
+        
+        if map_func == getattr(px, "scatter_map", None):
+            map_kwargs["map_style"] = "carto-darkmatter"
+        else:
+            map_kwargs["mapbox_style"] = "carto-darkmatter"
+            
+        fig_map = map_func(**map_kwargs)
+        fig_map.update_layout(margin=dict(l=0, r=0, t=0, b=0), height=480)
+        st.plotly_chart(fig_map, use_container_width=True)
+        
     with lead_c:
-        st.markdown("#### 🏆 Pan-India City Rankings")
-        st.dataframe(national_df.sort_values(by="AQI", ascending=False)[["City", "AQI", "Status"]].reset_index(drop=True), use_container_width=True, height=360)
+        st.markdown("#### 🏆 Live Hotspot Leaderboard")
+        st.dataframe(
+            filtered_df.sort_values(by="AQI", ascending=False)[["City", "AQI", "Status", "State"]].reset_index(drop=True),
+            use_container_width=True,
+            height=430
+        )
 
 # =============================================================
 # TAB 4: CIVIC INTELLIGENCE & HEALTH HUB
