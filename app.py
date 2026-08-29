@@ -1,10 +1,16 @@
 import os
+import sys
+
+# Ensure the root directory and src are in Python path for Streamlit Cloud
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+if CURRENT_DIR not in sys.path:
+    sys.path.insert(0, CURRENT_DIR)
+
 import sqlite3
 import urllib.parse
 from datetime import datetime
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 import streamlit as st
 from dotenv import load_dotenv
 
