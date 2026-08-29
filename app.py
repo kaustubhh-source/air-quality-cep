@@ -389,8 +389,7 @@ with tab3:
 
     map_c, lead_c = st.columns([2, 1.2])
     with map_c:
-        # Version-safe Plotly Map generation
-    map_func = getattr(px, "scatter_map", getattr(px, "scatter_mapbox", None))
+        map_func = getattr(px, "scatter_map", getattr(px, "scatter_mapbox", None))
     
     if map_func:
         # Check parameter style (map_style for Plotly 6+, mapbox_style for Plotly 5)
@@ -417,7 +416,6 @@ with tab3:
         fig_map = map_func(**map_kwargs)
         fig_map.update_layout(margin=dict(l=0, r=0, t=0, b=0), height=480)
         st.plotly_chart(fig_map, use_container_width=True)
-        
     with lead_c:
         st.markdown("#### 🏆 Live Hotspot Leaderboard")
         st.dataframe(
