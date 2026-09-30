@@ -6,9 +6,14 @@ import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 
-# Load environment variables
+# Load environment variables (support .env and st.secrets)
 load_dotenv()
 OPENAQ_API_KEY = os.getenv("OPENAQ_API_KEY", "").strip()
+try:
+    if not OPENAQ_API_KEY and hasattr(st, "secrets") and "OPENAQ_API_KEY" in st.secrets:
+        OPENAQ_API_KEY = str(st.secrets["OPENAQ_API_KEY"]).strip()
+except Exception:
+    pass
 
 def calculate_cpcb_subindex_pm25(conc: float) -> int:
     """Official Indian CPCB Breakpoint Interpolation for PM2.5"""
@@ -41,11 +46,32 @@ def calculate_cpcb_subindex_pm10(conc: float) -> int:
         return int(400 + (100 / 70) * (conc - 430))
 
 def geocode_place(query: str):
-    url = "https://nominatim.openstreetmap.org/search"
-    headers = {"User-Agent": "Pravaah-AirQualityPlatform/1.0"}
+    # Primary: Open-Meteo Geocoding API (Fast, no cloud IP blocking)
+    url_om = f"https://geocoding-api.open-meteo.com/v1/search?name={urllib.parse.quote(query)}&count=1&language=en&format=json"
+    try:
+        res = requests.get(url_om, timeout=5)
+        if res.status_code == 200:
+            results = res.json().get("results", [])
+            if results:
+                item = results[0]
+                city_name = item.get("name", query)
+                admin1 = item.get("admin1", "")
+                country = item.get("country", "India")
+                disp_name = f"{city_name}, {admin1}, {country}" if admin1 else f"{city_name}, {country}"
+                return {
+                    "lat": float(item["latitude"]),
+                    "lon": float(item["longitude"]),
+                    "display_name": disp_name
+                }
+    except Exception:
+        pass
+
+    # Secondary Fallback: Nominatim OpenStreetMap
+    url_nom = "https://nominatim.openstreetmap.org/search"
+    headers = {"User-Agent": "Pravaah-AirQualityPlatform/1.0 (academic.cep@mu.ac.in)"}
     params = {"q": f"{query}, India", "format": "json", "limit": 1}
     try:
-        res = requests.get(url, params=params, headers=headers, timeout=6)
+        res = requests.get(url_nom, params=params, headers=headers, timeout=5)
         if res.status_code == 200:
             data = res.json()
             if data:
@@ -60,7 +86,7 @@ def geocode_place(query: str):
 
 def reverse_geocode(lat: float, lon: float):
     url = "https://nominatim.openstreetmap.org/reverse"
-    headers = {"User-Agent": "Pravaah-AirQualityPlatform/1.0"}
+    headers = {"User-Agent": "Pravaah-AirQualityPlatform/1.0 (academic.cep@mu.ac.in)"}
     params = {"lat": lat, "lon": lon, "format": "json"}
     try:
         res = requests.get(url, params=params, headers=headers, timeout=6)
@@ -76,26 +102,30 @@ def reverse_geocode(lat: float, lon: float):
     return f"{lat:.4f}, {lon:.4f}"
 
 def fetch_live_air_quality_by_coords(lat: float, lon: float, location_name: str = ""):
-    """Atmospheric fallback via Open-Meteo"""
-    url = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat}&longitude={lon}&current=pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,us_aqi&timezone=Asia%2FKolkata"
+    """Atmospheric fallback via Open-Meteo with CPCB subindex interpolation"""
+    url = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat}&longitude={lon}&current=pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide&timezone=Asia%2FKolkata"
     try:
         r = requests.get(url, timeout=6)
         if r.status_code == 200:
             cur = r.json().get("current", {})
             p25 = float(cur.get("pm2_5", 25.0))
             p10 = float(cur.get("pm10", 45.0))
+            sub_pm25 = calculate_cpcb_subindex_pm25(p25)
+            sub_pm10 = calculate_cpcb_subindex_pm10(p10)
+            cpcb_aqi = max(sub_pm25, sub_pm10)
+            
             return {
                 "location": location_name,
                 "lat": lat,
                 "lon": lon,
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M IST"),
-                "aqi": int(cur.get("us_aqi", calculate_cpcb_subindex_pm25(p25))),
+                "aqi": cpcb_aqi,
                 "pm25": round(p25, 1),
                 "pm10": round(p10, 1),
                 "no2": round(float(cur.get("nitrogen_dioxide", 12.0)), 1),
                 "so2": round(float(cur.get("sulphur_dioxide", 5.0)), 1),
-                "dominant_pollutant": "PM2.5",
-                "source": "Open-Meteo Atmospheric Grid"
+                "dominant_pollutant": "PM2.5" if sub_pm25 >= sub_pm10 else "PM10",
+                "source": "Open-Meteo Atmospheric Grid (CPCB Standard)"
             }
     except Exception:
         pass
