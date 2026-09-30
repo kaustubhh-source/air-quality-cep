@@ -1,10 +1,13 @@
 import os
 import sys
 
-# Ensure the root directory and src are in Python path for Streamlit Cloud
+# Ensure root directory and src directory are at absolute top of Python path for Streamlit Cloud
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+SRC_DIR = os.path.join(CURRENT_DIR, "src")
 if CURRENT_DIR not in sys.path:
     sys.path.insert(0, CURRENT_DIR)
+if SRC_DIR not in sys.path:
+    sys.path.insert(0, SRC_DIR)
 
 import urllib.parse
 from datetime import datetime
