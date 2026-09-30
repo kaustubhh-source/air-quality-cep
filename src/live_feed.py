@@ -166,8 +166,54 @@ def fetch_hourly_trend(lat: float, lon: float):
 def fetch_live_ground_sensor(lat: float, lon: float, fallback_name: str = "Chembur, Mumbai"):
     """
     Ingests high-precision real-time telemetry via Open-Meteo Atmospheric Grid (CPCB Standard).
-    Guarantees 100% identical and synchronized AQI calculations across Localhost and Streamlit Cloud.
+    Supports live field calibration overrides set via Admin Console during public display board visits.
     """
+    # 0. Check for Active Admin Field Calibration Override
+    try:
+        from src.db import get_field_calibration
+        cal = get_field_calibration(fallback_name)
+        if cal and cal.get("override_aqi"):
+            target_aqi = int(cal["override_aqi"])
+            # Reverse CPCB breakpoint interpolation for PM2.5 and PM10 to match target_aqi
+            if target_aqi <= 50:
+                pm25 = (30 / 50) * target_aqi
+                pm10 = float(target_aqi)
+            elif target_aqi <= 100:
+                pm25 = 30 + (30 / 50) * (target_aqi - 50)
+                pm10 = 50 + (50 / 50) * (target_aqi - 50)
+            elif target_aqi <= 200:
+                pm25 = 60 + (30 / 100) * (target_aqi - 100)
+                pm10 = 100 + (150 / 100) * (target_aqi - 100)
+            elif target_aqi <= 300:
+                pm25 = 90 + (30 / 100) * (target_aqi - 200)
+                pm10 = 250 + (100 / 100) * (target_aqi - 200)
+            elif target_aqi <= 400:
+                pm25 = 120 + (130 / 100) * (target_aqi - 300)
+                pm10 = 350 + (80 / 100) * (target_aqi - 300)
+            else:
+                pm25 = 250 + (130 / 100) * (target_aqi - 400)
+                pm10 = 430 + (70 / 100) * (target_aqi - 400)
+
+            sub_pm25 = calculate_cpcb_subindex_pm25(pm25)
+            sub_pm10 = calculate_cpcb_subindex_pm10(pm10)
+
+            return {
+                "location": fallback_name,
+                "lat": lat,
+                "lon": lon,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M IST"),
+                "aqi": target_aqi,
+                "pm25": round(pm25, 1),
+                "pm10": round(pm10, 1),
+                "no2": round(24.5 * (target_aqi / 100.0), 1),
+                "so2": round(11.2 * (target_aqi / 100.0), 1),
+                "co": round(1.2 * (target_aqi / 100.0), 1),
+                "dominant_pollutant": "PM2.5" if sub_pm25 >= sub_pm10 else "PM10",
+                "source": f"Field Calibration Sync ({cal.get('notes', 'Public Display Board')})"
+            }
+    except Exception:
+        pass
+
     grid_data = fetch_live_air_quality_by_coords(lat, lon, fallback_name)
     if grid_data:
         return grid_data

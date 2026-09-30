@@ -31,7 +31,10 @@ from src.db import (
     revoke_broadcast,
     log_symptom,
     get_symptom_distribution,
-    get_symptom_registry
+    get_symptom_registry,
+    get_field_calibration,
+    set_field_calibration,
+    clear_field_calibration
 )
 
 # -------------------------------------------------------------
@@ -803,6 +806,36 @@ if tab5 is not None:
                 if st.button("🔒 Logout & Lock Session", use_container_width=True):
                     st.session_state["admin_authenticated"] = False
                     st.rerun()
+
+            # Field Visit Live Public Display Sync Panel
+            st.markdown("#### 🎯 Field Visit Calibration & Live Public Display Sync")
+            st.caption("Synchronize PRAVAAH dashboard telemetry to match physical CPCB public display boards during field visits.")
+            
+            curr_cal = get_field_calibration(st.session_state["target_name"])
+            if curr_cal:
+                st.warning(f"⚡ **ACTIVE FIELD CALIBRATION**: `{curr_cal['location_query']}` $\\rightarrow$ **AQI {curr_cal['override_aqi']}** ({curr_cal['notes']})")
+
+            with st.form("field_cal_form"):
+                cal_c1, cal_c2 = st.columns([2.2, 1])
+                with cal_c1:
+                    cal_loc = st.text_input("Target Location Query", value=st.session_state["target_name"], help="Location name to anchor field calibration")
+                with cal_c2:
+                    default_cal_val = curr_cal['override_aqi'] if curr_cal else 175
+                    cal_aqi = st.number_input("Live Public Display AQI", min_value=1, max_value=999, value=default_cal_val, step=1)
+                
+                cal_notes = st.text_input("Field Note / Spot Details", value="Chembur Public Board Calibration (Field Visit)")
+                if st.form_submit_button("⚡ Apply Field Calibration"):
+                    set_field_calibration(cal_loc, cal_aqi, cal_notes)
+                    st.success(f"Calibration active! Telemetry anchored to AQI {cal_aqi} for {cal_loc}.")
+                    st.rerun()
+
+            if curr_cal:
+                if st.button("🔄 Reset & Restore Live Satellite Telemetry", use_container_width=True):
+                    clear_field_calibration()
+                    st.info("Field calibration reset. Automated live telemetry restored.")
+                    st.rerun()
+
+            st.markdown("---")
 
             adm_c1, adm_c2 = st.columns(2)
             

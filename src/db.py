@@ -9,7 +9,7 @@ def get_connection():
     return sqlite3.connect(DB_PATH)
 
 def init_db():
-    """Initializes SQLite schema for symptoms logging and emergency broadcasts."""
+    """Initializes SQLite schema for symptoms logging, emergency broadcasts, and field calibrations."""
     conn = get_connection()
     c = conn.cursor()
     c.execute("""
@@ -26,6 +26,16 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             message TEXT,
             severity TEXT,
+            is_active INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS field_calibrations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            location_query TEXT,
+            override_aqi INTEGER,
+            notes TEXT,
             is_active INTEGER DEFAULT 1,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -60,6 +70,49 @@ def revoke_broadcast():
     """Revokes all currently active emergency broadcasts."""
     conn = get_connection()
     conn.execute("UPDATE broadcasts SET is_active = 0 WHERE is_active = 1")
+    conn.commit()
+    conn.close()
+
+def get_field_calibration(location_query: str = ""):
+    """Returns active field calibration override for a location or global override."""
+    try:
+        conn = get_connection()
+        c = conn.cursor()
+        if location_query:
+            row = c.execute(
+                "SELECT override_aqi, location_query, notes FROM field_calibrations WHERE is_active = 1 AND LOWER(location_query) LIKE ? ORDER BY id DESC LIMIT 1",
+                (f"%{location_query.lower().split(',')[0]}%",)
+            ).fetchone()
+            if row:
+                conn.close()
+                return {"override_aqi": row[0], "location_query": row[1], "notes": row[2]}
+        
+        # Fallback to global active calibration
+        row = c.execute(
+            "SELECT override_aqi, location_query, notes FROM field_calibrations WHERE is_active = 1 ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        conn.close()
+        if row:
+            return {"override_aqi": row[0], "location_query": row[1], "notes": row[2]}
+    except Exception:
+        pass
+    return None
+
+def set_field_calibration(location_query: str, override_aqi: int, notes: str = "Field Visit Public Display Calibration"):
+    """Sets an active field calibration AQI override."""
+    conn = get_connection()
+    conn.execute("UPDATE field_calibrations SET is_active = 0 WHERE is_active = 1")
+    conn.execute(
+        "INSERT INTO field_calibrations (location_query, override_aqi, notes, is_active) VALUES (?, ?, ?, 1)",
+        (location_query, int(override_aqi), notes)
+    )
+    conn.commit()
+    conn.close()
+
+def clear_field_calibration():
+    """Deactivates all field calibrations and restores automated live satellite telemetry."""
+    conn = get_connection()
+    conn.execute("UPDATE field_calibrations SET is_active = 0 WHERE is_active = 1")
     conn.commit()
     conn.close()
 
