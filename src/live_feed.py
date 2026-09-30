@@ -166,11 +166,12 @@ def fetch_hourly_trend(lat: float, lon: float):
 def fetch_live_ground_sensor(lat: float, lon: float, fallback_name: str = "Chembur, Mumbai"):
     """
     Ingests nearest physical ground station data via OpenAQ v3 API.
+    Falls back cleanly to Open-Meteo atmospheric grid if OpenAQ sensors are offline or unpopulated.
     """
     if OPENAQ_API_KEY:
         headers = {
             "X-API-Key": OPENAQ_API_KEY,
-            "User-Agent": "Pravaah-AirQualityPlatform/1.0"
+            "User-Agent": "Pravaah-AirQualityPlatform/1.0 (academic.cep@mu.ac.in)"
         }
         loc_url = f"https://api.openaq.org/v3/locations?coordinates={lat},{lon}&radius=25000&limit=3"
         try:
@@ -188,33 +189,39 @@ def fetch_live_ground_sensor(lat: float, lon: float, fallback_name: str = "Chemb
                         sensors_data = l_res.json().get("results", [])
                         metrics = {}
                         for item in sensors_data:
-                            param_name = item.get("parameter", {}).get("name", "").lower()
-                            metrics[param_name] = item.get("value", 0.0)
+                            # Normalize parameter names: "pm2.5" -> "pm25", "pm10" -> "pm10"
+                            raw_param = str(item.get("parameter", {}).get("name", "")).lower().replace(".", "").replace(" ", "").replace("_", "")
+                            val = item.get("value")
+                            if val is not None and isinstance(val, (int, float)) and val > 0:
+                                metrics[raw_param] = float(val)
 
-                        pm25_val = float(metrics.get("pm25", 28.0))
-                        pm10_val = float(metrics.get("pm10", 55.0))
-                        no2_val = float(metrics.get("no2", 14.0))
-                        so2_val = float(metrics.get("so2", 6.0))
-                        co_val = float(metrics.get("co", 1.0))
+                        # Only use OpenAQ payload if it contains real positive numeric readings for PM2.5 or PM10
+                        if "pm25" in metrics or "pm10" in metrics:
+                            grid_ref = fetch_live_air_quality_by_coords(lat, lon, fallback_name) or {}
+                            pm25_val = metrics.get("pm25", grid_ref.get("pm25", 25.0))
+                            pm10_val = metrics.get("pm10", grid_ref.get("pm10", 45.0))
+                            no2_val = metrics.get("no2", grid_ref.get("no2", 12.0))
+                            so2_val = metrics.get("so2", grid_ref.get("so2", 5.0))
+                            co_val = metrics.get("co", grid_ref.get("co", 1.0))
 
-                        sub_pm25 = calculate_cpcb_subindex_pm25(pm25_val)
-                        sub_pm10 = calculate_cpcb_subindex_pm10(pm10_val)
-                        cpcb_aqi = max(sub_pm25, sub_pm10)
+                            sub_pm25 = calculate_cpcb_subindex_pm25(pm25_val)
+                            sub_pm10 = calculate_cpcb_subindex_pm10(pm10_val)
+                            cpcb_aqi = max(sub_pm25, sub_pm10)
 
-                        return {
-                            "location": station_name,
-                            "lat": lat,
-                            "lon": lon,
-                            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M IST"),
-                            "aqi": cpcb_aqi,
-                            "pm25": round(pm25_val, 1),
-                            "pm10": round(pm10_val, 1),
-                            "no2": round(no2_val, 1),
-                            "so2": round(so2_val, 1),
-                            "co": round(co_val, 1),
-                            "dominant_pollutant": "PM2.5" if sub_pm25 >= sub_pm10 else "PM10",
-                            "source": "Physical CPCB CAAQMS Station (OpenAQ)"
-                        }
+                            return {
+                                "location": station_name,
+                                "lat": lat,
+                                "lon": lon,
+                                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M IST"),
+                                "aqi": cpcb_aqi,
+                                "pm25": round(pm25_val, 1),
+                                "pm10": round(pm10_val, 1),
+                                "no2": round(no2_val, 1),
+                                "so2": round(so2_val, 1),
+                                "co": round(co_val, 1),
+                                "dominant_pollutant": "PM2.5" if sub_pm25 >= sub_pm10 else "PM10",
+                                "source": f"Physical CAAQMS Ground Station ({station_name})"
+                            }
         except Exception:
             pass
 
