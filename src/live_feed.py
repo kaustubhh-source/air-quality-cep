@@ -229,15 +229,90 @@ def clean_display_name(raw_name: str, query: str = "") -> str:
         return f"{first}, {sec}"
     return f"{first}, India"
 
+POSTAL_CIRCLE_MAP = {
+    "11": (28.6139, 77.2090, "Delhi Postal Circle"),
+    "12": (28.4595, 77.0266, "Haryana Postal Circle (South)"),
+    "13": (30.1309, 77.2842, "Haryana Postal Circle (North)"),
+    "14": (30.9010, 75.8573, "Punjab Postal Circle"),
+    "15": (30.2110, 74.9455, "Punjab Postal Circle (West)"),
+    "16": (30.7333, 76.7794, "Chandigarh Postal Circle"),
+    "17": (31.1048, 77.1734, "Himachal Pradesh Postal Circle"),
+    "18": (32.7266, 74.8570, "Jammu & Kashmir Postal Circle (Jammu)"),
+    "19": (34.0837, 74.7973, "Jammu & Kashmir Postal Circle (Kashmir & Ladakh)"),
+    "20": (28.6692, 77.4538, "Uttar Pradesh Postal Circle (West)"),
+    "21": (25.4358, 81.8463, "Uttar Pradesh Postal Circle (East)"),
+    "22": (26.8467, 80.9462, "Uttar Pradesh Postal Circle (Central)"),
+    "23": (25.3176, 82.9739, "Uttar Pradesh Postal Circle (Varanasi)"),
+    "24": (28.9845, 77.7064, "Uttarakhand & UP Postal Circle"),
+    "25": (29.4727, 77.7085, "Uttar Pradesh Postal Circle (Muzaffarnagar)"),
+    "26": (29.2183, 79.5130, "Uttarakhand Postal Circle (Kumaon)"),
+    "27": (26.7606, 83.3732, "Uttar Pradesh Postal Circle (Gorakhpur)"),
+    "28": (27.1767, 78.0081, "Uttar Pradesh Postal Circle (Agra)"),
+    "30": (26.9015, 75.8286, "Rajasthan Postal Circle (Jaipur)"),
+    "31": (24.5854, 73.7125, "Rajasthan Postal Circle (Udaipur)"),
+    "32": (25.2138, 75.8648, "Rajasthan Postal Circle (Kota)"),
+    "33": (28.0229, 73.3119, "Rajasthan Postal Circle (Bikaner)"),
+    "34": (26.2389, 73.0243, "Rajasthan Postal Circle (Jodhpur)"),
+    "36": (22.3039, 70.8022, "Gujarat Postal Circle (Rajkot)"),
+    "37": (23.2977, 69.6509, "Gujarat Postal Circle (Kutch)"),
+    "38": (23.0225, 72.5714, "Gujarat Postal Circle (Ahmedabad)"),
+    "39": (21.1702, 72.8311, "Gujarat Postal Circle (Surat)"),
+    "40": (19.0760, 72.8777, "Maharashtra Postal Circle (Konkan & Mumbai)"),
+    "41": (18.5204, 73.8567, "Maharashtra Postal Circle (Pune & Western MS)"),
+    "42": (19.9975, 73.7898, "Maharashtra Postal Circle (Nashik & Khandesh)"),
+    "43": (19.8762, 75.3433, "Maharashtra Postal Circle (Marathwada)"),
+    "44": (21.1458, 79.0882, "Maharashtra Postal Circle (Vidarbha)"),
+    "45": (22.7196, 75.8577, "Madhya Pradesh Postal Circle (Indore & Malwa)"),
+    "46": (23.2599, 77.4126, "Madhya Pradesh Postal Circle (Bhopal)"),
+    "47": (26.2183, 78.1828, "Madhya Pradesh Postal Circle (Gwalior)"),
+    "48": (23.1815, 79.9864, "Madhya Pradesh Postal Circle (Jabalpur)"),
+    "49": (21.2387, 81.6508, "Chhattisgarh Postal Circle"),
+    "50": (17.3850, 78.4867, "Telangana Postal Circle"),
+    "51": (14.6819, 77.6006, "Andhra Pradesh Postal Circle (Rayalaseema)"),
+    "52": (16.5062, 80.6480, "Andhra Pradesh Postal Circle (Vijayawada)"),
+    "53": (17.6868, 83.2185, "Andhra Pradesh Postal Circle (Visakhapatnam)"),
+    "56": (12.9716, 77.5946, "Karnataka Postal Circle (Bengaluru)"),
+    "57": (12.2958, 76.6394, "Karnataka Postal Circle (Mysuru & South)"),
+    "58": (15.3647, 75.1240, "Karnataka Postal Circle (Hubballi & North)"),
+    "59": (15.8497, 74.4977, "Karnataka Postal Circle (Belagavi)"),
+    "60": (13.0827, 80.2707, "Tamil Nadu Postal Circle (Chennai)"),
+    "61": (10.7905, 78.7047, "Tamil Nadu Postal Circle (Tiruchirappalli)"),
+    "62": (9.9252, 78.1198, "Tamil Nadu Postal Circle (Madurai)"),
+    "63": (12.9165, 79.1325, "Tamil Nadu Postal Circle (Vellore)"),
+    "64": (11.0168, 76.9558, "Tamil Nadu Postal Circle (Coimbatore)"),
+    "67": (11.2588, 75.7804, "Kerala Postal Circle (Malabar)"),
+    "68": (9.9312, 76.2673, "Kerala & Lakshadweep Postal Circle (Kochi)"),
+    "69": (8.5241, 76.9366, "Kerala Postal Circle (Thiruvananthapuram)"),
+    "70": (22.5726, 88.3639, "West Bengal Postal Circle (Kolkata)"),
+    "71": (22.5958, 88.2636, "West Bengal Postal Circle (Howrah & Rural)"),
+    "72": (22.4257, 87.3199, "West Bengal Postal Circle (Medinipur)"),
+    "73": (26.7271, 88.3953, "West Bengal & Sikkim Postal Circle (North Bengal)"),
+    "74": (22.9868, 88.4600, "West Bengal & A&N Islands Postal Circle"),
+    "75": (20.2961, 85.8245, "Odisha Postal Circle (Bhubaneswar)"),
+    "76": (19.3149, 84.7941, "Odisha Postal Circle (Berhampur)"),
+    "77": (21.4669, 83.9812, "Odisha Postal Circle (Sambalpur)"),
+    "78": (26.1445, 91.7362, "Assam Postal Circle"),
+    "79": (25.5788, 91.8933, "North East Postal Circle (Meghalaya, Tripura, Manipur, Nagaland, Mizoram, Arunachal)"),
+    "80": (25.5941, 85.1376, "Bihar Postal Circle (Patna & Central)"),
+    "81": (25.2425, 86.9842, "Bihar Postal Circle (Bhagalpur)"),
+    "82": (24.7955, 85.0002, "Bihar & Jharkhand Postal Circle (Gaya & South)"),
+    "83": (23.3441, 85.3096, "Jharkhand Postal Circle (Ranchi)"),
+    "84": (26.1209, 85.3647, "Bihar Postal Circle (Muzaffarpur & North)"),
+    "85": (25.7949, 87.4035, "Bihar Postal Circle (Purnia & East)"),
+    "90": (28.6139, 77.2090, "Army Postal Service (APS Field Station)"),
+    "91": (28.6139, 77.2090, "Army Postal Service (APS Field Station)")
+}
+
 def geocode_place(query: str):
     q_clean = query.strip()
     q_lower = q_clean.lower()
 
-    # 0. Instant PIN Code Lookup for 6-digit Indian Postal Codes (e.g. 400071, 110001, 560066)
+    # 0. 4-Tier Bulletproof Pan-India PIN Code Resolution Engine for EVERY 6-Digit Indian PIN
     if q_clean.isdigit() and len(q_clean) == 6:
-        url_pin = f"https://nominatim.openstreetmap.org/search?postalcode={q_clean}&country=India&format=json"
+        # Tier 1: Nominatim Postal Code search
         try:
-            res = requests.get(url_pin, headers=HEADERS, timeout=6)
+            url_pin = f"https://nominatim.openstreetmap.org/search?postalcode={q_clean}&country=India&format=json"
+            res = requests.get(url_pin, headers=HEADERS, timeout=4)
             if res.status_code == 200 and res.json():
                 item = res.json()[0]
                 lat = float(item["lat"])
@@ -252,6 +327,73 @@ def geocode_place(query: str):
                 }
         except Exception:
             pass
+
+        # Tier 2: India Post Public API Direct Fetch
+        try:
+            url_post = f"https://api.postalpincode.in/pincode/{q_clean}"
+            r_post = requests.get(url_post, headers=HEADERS, timeout=4)
+            if r_post.status_code == 200 and r_post.json():
+                data = r_post.json()[0]
+                if data.get("Status") == "Success" and data.get("PostOffice"):
+                    po = data["PostOffice"][0]
+                    po_name = po.get("Name", "")
+                    district = po.get("District", "")
+                    state = po.get("State", "")
+                    location_str = f"{po_name}, {district}, {state}, India"
+                    url_g = f"https://nominatim.openstreetmap.org/search?q={urllib.parse.quote(location_str)}&format=json&limit=1"
+                    r_g = requests.get(url_g, headers=HEADERS, timeout=3)
+                    if r_g.status_code == 200 and r_g.json():
+                        it = r_g.json()[0]
+                        return {
+                            "lat": float(it["lat"]),
+                            "lon": float(it["lon"]),
+                            "display_name": f"PIN {q_clean} ({po_name}, {district})"
+                        }
+        except Exception:
+            pass
+
+        # Tier 3: Open-Meteo & Nominatim Free Query
+        try:
+            url_free = f"https://nominatim.openstreetmap.org/search?q={q_clean},+India&format=json&limit=1"
+            r_free = requests.get(url_free, headers=HEADERS, timeout=3)
+            if r_free.status_code == 200 and r_free.json():
+                item = r_free.json()[0]
+                return {
+                    "lat": float(item["lat"]),
+                    "lon": float(item["lon"]),
+                    "display_name": f"PIN {q_clean} (India)"
+                }
+        except Exception:
+            pass
+
+        # Tier 4: Postal Circle & Region Centroid Fallback (Guarantees 100% resolution for ANY Indian PIN code)
+        prefix2 = q_clean[:2]
+        prefix1 = q_clean[0]
+        if prefix2 in POSTAL_CIRCLE_MAP:
+            c_lat, c_lon, c_name = POSTAL_CIRCLE_MAP[prefix2]
+            return {
+                "lat": c_lat,
+                "lon": c_lon,
+                "display_name": f"PIN {q_clean} ({c_name})"
+            }
+        elif prefix1 in ["1", "2", "3", "4", "5", "6", "7", "8", "9"]:
+            reg_map = {
+                "1": (28.6139, 77.2090, "Northern Postal Region, India"),
+                "2": (26.8467, 80.9462, "Uttar Pradesh & UK Postal Region, India"),
+                "3": (26.9015, 75.8286, "Western Postal Region (Rajasthan & Gujarat)"),
+                "4": (19.0760, 72.8777, "Maharashtra & MP Postal Region"),
+                "5": (15.9129, 79.7400, "Southern Postal Region (AP, TS, KA)"),
+                "6": (11.1271, 78.6569, "Southern Postal Region (TN, KL, Lakshadweep)"),
+                "7": (22.5726, 88.3639, "Eastern & NE Postal Region"),
+                "8": (25.5941, 85.1376, "Eastern Postal Region (Bihar & Jharkhand)"),
+                "9": (28.6139, 77.2090, "Army Postal Service, India")
+            }
+            r_lat, r_lon, r_name = reg_map[prefix1]
+            return {
+                "lat": r_lat,
+                "lon": r_lon,
+                "display_name": f"PIN {q_clean} ({r_name})"
+            }
 
     # 1. Instant Gazetteer Lookup for Indian Landmarks & Sub-cities
     for key, val in INDIAN_GAZETTEER.items():
