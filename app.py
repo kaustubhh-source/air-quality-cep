@@ -284,11 +284,10 @@ with search_row2:
                 if geo_hit:
                     st.session_state["target_lat"] = geo_hit["lat"]
                     st.session_state["target_lon"] = geo_hit["lon"]
-                    parts = geo_hit["display_name"].split(",")
-                    st.session_state["target_name"] = f"{parts[0].strip()}, {parts[-3].strip() if len(parts) >= 3 else ''}"
+                    st.session_state["target_name"] = geo_hit["display_name"]
                     st.rerun()
                 else:
-                    st.warning("Locality not found. Please try another landmark or city name.")
+                    st.warning(f"⚠️ Could not locate '{loc_input.strip()}'. Please try another city, landmark, or PIN code.")
 
 st.markdown(f"**Selected Station:** `{st.session_state['target_name']}` &nbsp;|&nbsp; `Coordinates: {st.session_state['target_lat']:.4f}, {st.session_state['target_lon']:.4f}`")
 st.markdown("---")

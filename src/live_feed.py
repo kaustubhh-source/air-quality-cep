@@ -106,19 +106,77 @@ def calculate_cpcb_subindex_o3(conc: float) -> int:
         return int(400 + (100 / 540) * (conc - 748))
 
 INDIAN_GAZETTEER = {
+    # Mumbai & MMR Sub-cities
+    "kurla": (19.0657, 72.8783, "Kurla, Mumbai"),
+    "chembur": (19.0522, 72.8994, "Chembur, Mumbai"),
+    "colaba": (18.9067, 72.8147, "Colaba, Mumbai"),
+    "dadar": (19.0178, 72.8478, "Dadar, Mumbai"),
+    "bandra": (19.0596, 72.8295, "Bandra, Mumbai"),
+    "bkc": (19.0657, 72.8687, "BKC Bandra, Mumbai"),
+    "andheri": (19.1197, 72.8464, "Andheri, Mumbai"),
+    "borivali": (19.2307, 72.8567, "Borivali, Mumbai"),
+    "ghatkopar": (19.0860, 72.9081, "Ghatkopar, Mumbai"),
+    "mulund": (19.1726, 72.9565, "Mulund, Mumbai"),
+    "malad": (19.1874, 72.8484, "Malad, Mumbai"),
+    "kandivali": (19.2047, 72.8522, "Kandivali, Mumbai"),
+    "goregaon": (19.1663, 72.8526, "Goregaon, Mumbai"),
+    "santacruz": (19.0843, 72.8360, "Santacruz, Mumbai"),
+    "vile parle": (19.0968, 72.8517, "Vile Parle, Mumbai"),
+    "powai": (19.1176, 72.9060, "Powai, Mumbai"),
+    "worli": (19.0134, 72.8160, "Worli, Mumbai"),
+    "parel": (19.0092, 72.8377, "Parel, Mumbai"),
+    "sion": (19.0400, 72.8600, "Sion, Mumbai"),
+    "wadala": (19.0216, 72.8646, "Wadala, Mumbai"),
+    "thane": (19.2183, 72.9781, "Thane, Maharashtra"),
+    "kalyan": (19.2403, 73.1305, "Kalyan, Maharashtra"),
+    "dombivli": (19.2184, 73.0867, "Dombivli, Maharashtra"),
+    "vashi": (19.0770, 73.0079, "Vashi, Navi Mumbai"),
+    "nerul": (19.0330, 73.0169, "Nerul, Navi Mumbai"),
+    "belapur": (19.0242, 73.0400, "CBD Belapur, Navi Mumbai"),
+    "panvel": (18.9894, 73.1175, "Panvel, Navi Mumbai"),
+    # Delhi NCR
     "anand vihar": (28.6469, 77.3160, "Anand Vihar, Delhi"),
     "ito": (28.6315, 77.2492, "ITO, Delhi"),
+    "cp": (28.6315, 77.2167, "Connaught Place, Delhi"),
+    "connaught place": (28.6315, 77.2167, "Connaught Place, Delhi"),
+    "rohini": (28.7325, 77.1197, "Rohini, Delhi"),
+    "dwarka": (28.5921, 77.0460, "Dwarka, Delhi"),
+    "okhla": (28.5412, 77.2798, "Okhla, Delhi"),
+    "janakpuri": (28.6219, 77.0878, "Janakpuri, Delhi"),
+    "pitampura": (28.6987, 77.1384, "Pitampura, Delhi"),
+    "laxmi nagar": (28.6304, 77.2773, "Laxmi Nagar, Delhi"),
+    "mayur vihar": (28.6053, 77.2944, "Mayur Vihar, Delhi"),
+    "karol bagh": (28.6514, 77.1907, "Karol Bagh, Delhi"),
     "sector 62": (28.6271, 77.3725, "Sector 62, Noida"),
     "noida": (28.5355, 77.3910, "Noida, Uttar Pradesh"),
     "gurugram": (28.4595, 77.0266, "Gurugram, Haryana"),
     "gurgaon": (28.4595, 77.0266, "Gurugram, Haryana"),
+    "faridabad": (28.4089, 77.3178, "Faridabad, Haryana"),
+    "ghaziabad": (28.6692, 77.4538, "Ghaziabad, Uttar Pradesh"),
+    # Bengaluru
     "whitefield": (12.9698, 77.7500, "Whitefield, Bengaluru"),
-    "bkc": (19.0657, 72.8687, "BKC Bandra, Mumbai"),
-    "chembur": (19.0522, 72.8994, "Chembur, Mumbai"),
-    "colaba": (18.9067, 72.8147, "Colaba, Mumbai"),
-    "connaught place": (28.6315, 77.2167, "Connaught Place, Delhi"),
-    "cp": (28.6315, 77.2167, "Connaught Place, Delhi"),
+    "koramangala": (12.9352, 77.6245, "Koramangala, Bengaluru"),
+    "indiranagar": (12.9784, 77.6408, "Indiranagar, Bengaluru"),
+    "hsr layout": (12.9121, 77.6446, "HSR Layout, Bengaluru"),
+    "jayanagar": (12.9250, 77.5938, "Jayanagar, Bengaluru"),
+    "marathahalli": (12.9591, 77.6974, "Marathahalli, Bengaluru"),
+    "electronic city": (12.8452, 77.6602, "Electronic City, Bengaluru"),
+    "hebbal": (13.0358, 77.5970, "Hebbal, Bengaluru"),
+    "btm layout": (12.9166, 77.6101, "BTM Layout, Bengaluru"),
+    # Kolkata & East
+    "salt lake": (22.5867, 88.4171, "Salt Lake, Kolkata"),
+    "new town": (22.5958, 88.4726, "New Town, Kolkata"),
+    "howrah": (22.5958, 88.2636, "Howrah, West Bengal"),
+    "jadavpur": (22.4994, 88.3712, "Jadavpur, Kolkata"),
+    "kolkata": (22.5726, 88.3639, "Kolkata, West Bengal"),
+    "siliguri": (26.7271, 88.3953, "Siliguri, West Bengal"),
+    "dhanbad": (23.7957, 86.4304, "Dhanbad, Jharkhand"),
+    "muzaffarpur": (26.1209, 85.3647, "Muzaffarpur, Bihar"),
     "patna": (25.5941, 85.1376, "Patna, Bihar"),
+    "ranchi": (23.3441, 85.3096, "Ranchi, Jharkhand"),
+    "bhubaneswar": (20.2961, 85.8245, "Bhubaneswar, Odisha"),
+    "guwahati": (26.1445, 91.7362, "Guwahati, Assam"),
+    # North & West & Central & South
     "lucknow": (26.8467, 80.9462, "Lucknow, Uttar Pradesh"),
     "kanpur": (26.4499, 80.3319, "Kanpur, Uttar Pradesh"),
     "varanasi": (25.3176, 82.9739, "Varanasi, Uttar Pradesh"),
@@ -126,11 +184,6 @@ INDIAN_GAZETTEER = {
     "jaipur": (26.9015, 75.8286, "Jaipur, Rajasthan"),
     "jodhpur": (26.2389, 73.0243, "Jodhpur, Rajasthan"),
     "chandigarh": (30.7333, 76.7794, "Chandigarh, India"),
-    "kolkata": (22.5726, 88.3639, "Kolkata, West Bengal"),
-    "howrah": (22.5958, 88.2636, "Howrah, West Bengal"),
-    "bhubaneswar": (20.2961, 85.8245, "Bhubaneswar, Odisha"),
-    "ranchi": (23.3441, 85.3096, "Ranchi, Jharkhand"),
-    "guwahati": (26.1445, 91.7362, "Guwahati, Assam"),
     "bhopal": (23.2599, 77.4126, "Bhopal, Madhya Pradesh"),
     "indore": (22.7196, 75.8577, "Indore, Madhya Pradesh"),
     "pune": (18.5204, 73.8567, "Pune, Maharashtra"),
@@ -144,49 +197,97 @@ INDIAN_GAZETTEER = {
     "kochi": (9.9312, 76.2673, "Kochi, Kerala")
 }
 
+KNOWN_CITIES = [
+    "Mumbai", "Delhi", "Bengaluru", "Bangalore", "Kolkata", "Chennai", "Hyderabad", "Pune",
+    "Ahmedabad", "Surat", "Jaipur", "Lucknow", "Kanpur", "Nagpur", "Indore", "Thane",
+    "Bhopal", "Visakhapatnam", "Patna", "Vadodara", "Ghaziabad", "Ludhiana", "Agra",
+    "Nashik", "Ranchi", "Faridabad", "Meerut", "Rajkot", "Varanasi", "Srinagar",
+    "Aurangabad", "Dhanbad", "Amritsar", "Navi Mumbai", "Howrah", "Gwalior", "Jabalpur",
+    "Coimbatore", "Vijayawada", "Jodhpur", "Madurai", "Raipur", "Kota", "Guwahati",
+    "Chandigarh", "Solapur", "Mysuru", "Gurugram", "Gurgaon", "Noida", "Jalandhar",
+    "Bhubaneswar", "Dehradun", "Durgapur", "Asansol", "Rourkela", "Kochi", "Udaipur"
+]
+
+def clean_display_name(raw_name: str, query: str = "") -> str:
+    parts = [p.strip() for p in raw_name.split(",") if p.strip()]
+    if not parts:
+        return query.title() if query else "India"
+    first = parts[0]
+    for c in KNOWN_CITIES:
+        if c.lower() in raw_name.lower():
+            if first.lower() == c.lower():
+                for p in parts[1:]:
+                    if p.lower() not in ["india", first.lower()] and not p.isdigit() and len(p) > 2:
+                        return f"{first}, {p}"
+                return f"{first}, India"
+            else:
+                return f"{first}, {c}"
+    if len(parts) >= 2:
+        sec = parts[-2] if parts[-1].lower() == "india" else parts[-1]
+        return f"{first}, {sec}"
+    return f"{first}, India"
+
 def geocode_place(query: str):
     q_lower = query.strip().lower()
 
-    # 1. Instant Gazetteer Lookup for Indian Landmarks & Stations
+    # 1. Instant Gazetteer Lookup for Indian Landmarks & Sub-cities
     for key, val in INDIAN_GAZETTEER.items():
-        if key in q_lower:
+        if key == q_lower or f" {key} " in f" {q_lower} " or q_lower.startswith(f"{key},"):
             return {
                 "lat": val[0],
                 "lon": val[1],
                 "display_name": val[2]
             }
 
-    # 2. Primary: Nominatim OpenStreetMap (Best for local sectors, neighborhoods & PIN codes)
-    url_nom = f"https://nominatim.openstreetmap.org/search?q={urllib.parse.quote(query)}&countrycodes=in&format=json&limit=1"
+    # 2. Multi-result Open-Meteo Geocoding API filtered for India
+    url_om = f"https://geocoding-api.open-meteo.com/v1/search?name={urllib.parse.quote(query)}&count=15&language=en&format=json"
     try:
-        res = requests.get(url_nom, headers=HEADERS, timeout=6)
+        res = requests.get(url_om, headers=HEADERS, timeout=5)
+        if res.status_code == 200:
+            results = res.json().get("results", [])
+            for item in results:
+                country = item.get("country", "")
+                country_code = item.get("country_code", "")
+                if country.lower() == "india" or country_code.upper() == "IN":
+                    city_name = item.get("name", query)
+                    admin1 = item.get("admin1", "")
+                    disp_name = f"{city_name}, {admin1}" if admin1 else f"{city_name}, India"
+                    return {
+                        "lat": float(item["latitude"]),
+                        "lon": float(item["longitude"]),
+                        "display_name": disp_name
+                    }
+    except Exception:
+        pass
+
+    # 3. Primary: Nominatim OpenStreetMap (Best for local sectors, neighborhoods, sub-cities & PIN codes)
+    url_nom = "https://nominatim.openstreetmap.org/search"
+    params = {"q": f"{query}, India", "format": "json", "limit": 1}
+    try:
+        res = requests.get(url_nom, params=params, headers=HEADERS, timeout=5)
         if res.status_code == 200 and res.json():
             item = res.json()[0]
+            raw_disp = item.get("display_name", query)
             return {
                 "lat": float(item["lat"]),
                 "lon": float(item["lon"]),
-                "display_name": item.get("display_name", query)
+                "display_name": clean_display_name(raw_disp, query)
             }
     except Exception:
         pass
 
-    # 3. Secondary: Open-Meteo Geocoding API
-    url_om = f"https://geocoding-api.open-meteo.com/v1/search?name={urllib.parse.quote(query)}&count=1&language=en&format=json"
+    # 4. Fallback without appending India
+    params_raw = {"q": query, "format": "json", "limit": 1}
     try:
-        res = requests.get(url_om, headers=HEADERS, timeout=6)
-        if res.status_code == 200:
-            results = res.json().get("results", [])
-            if results:
-                item = results[0]
-                city_name = item.get("name", query)
-                admin1 = item.get("admin1", "")
-                country = item.get("country", "India")
-                disp_name = f"{city_name}, {admin1}, {country}" if admin1 else f"{city_name}, {country}"
-                return {
-                    "lat": float(item["latitude"]),
-                    "lon": float(item["longitude"]),
-                    "display_name": disp_name
-                }
+        res = requests.get(url_nom, params=params_raw, headers=HEADERS, timeout=5)
+        if res.status_code == 200 and res.json():
+            item = res.json()[0]
+            raw_disp = item.get("display_name", query)
+            return {
+                "lat": float(item["lat"]),
+                "lon": float(item["lon"]),
+                "display_name": clean_display_name(raw_disp, query)
+            }
     except Exception:
         pass
 
