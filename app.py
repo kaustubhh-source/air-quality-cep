@@ -472,22 +472,20 @@ with tab2:
         st.session_state["latest_model_metrics"] = model_metrics
         st.session_state["latest_fc_city"] = selected_fc_city
 
-        # Responsive CSS Grid Day Cards (Auto-fits 7 cards on desktop, 4/2 columns on mobile)
-        cards_html = "<div style='display: grid; grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); gap: 8px; margin: 12px 0;'>"
-        for i, row in f_df.iterrows():
+        # 7-Day Forecast Cards using native Streamlit columns
+        cols = st.columns(len(f_df))
+        for i, (_, row) in enumerate(f_df.iterrows()):
             pred_v = int(row["Predicted_AQI"])
             p_cat, p_col, _, _ = get_cpcb_category(pred_v)
-            cards_html += f"""
-            <div style="border: 1px solid {p_col}66; background: rgba(255,255,255,0.02); border-radius: 8px; padding: 10px 4px; text-align: center;">
-                <div style="font-size: 11px; color: #999;">{row['Date']}</div>
-                <div style="font-size: 24px; font-weight: 800; color: white; margin: 4px 0;">{pred_v}</div>
-                <div style="background: {p_col}; color: white; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 2px 6px; display: inline-block;">
-                    {p_cat}
-                </div>
-            </div>
-            """
-        cards_html += "</div>"
-        st.markdown(cards_html, unsafe_allow_html=True)
+            with cols[i]:
+                st.markdown(
+                    f'<div style="border: 1px solid {p_col}66; background: rgba(255,255,255,0.02); border-radius: 8px; padding: 10px 4px; text-align: center;">'
+                    f'<div style="font-size: 11px; color: #999;">{row["Date"]}</div>'
+                    f'<div style="font-size: 22px; font-weight: 800; color: white; margin: 4px 0;">{pred_v}</div>'
+                    f'<div style="background: {p_col}; color: white; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 2px 6px; display: inline-block;">{p_cat}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
 
         # Plotly Area Chart with Thresholds
         fig_traj = px.area(f_df, x="Date", y="Predicted_AQI", markers=True, text="Predicted_AQI", title=f"Projected AQI Trajectory ({selected_fc_city})")
