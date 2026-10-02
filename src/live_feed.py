@@ -86,20 +86,41 @@ def geocode_place(query: str):
     return None
 
 def reverse_geocode(lat: float, lon: float):
-    url = "https://nominatim.openstreetmap.org/reverse"
+    # Quick match for Chembur GPS default
+    if abs(lat - 19.0522) < 0.02 and abs(lon - 72.8994) < 0.02:
+        return "Chembur, Mumbai"
+
+    # Primary: BigDataCloud Reverse Geocode API (Fast, no rate-limiting)
+    url_bdc = f"https://api.bigdatacloud.net/data/reverse-geocode-client?latitude={lat}&longitude={lon}&localityLanguage=en"
+    try:
+        r = requests.get(url_bdc, headers=HEADERS, timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            locality = data.get("locality") or data.get("city")
+            state = data.get("principalSubdivision")
+            if locality and state:
+                return f"{locality}, {state}"
+            elif locality:
+                return f"{locality}, India"
+    except Exception:
+        pass
+
+    # Secondary: Nominatim OpenStreetMap
+    url_nom = "https://nominatim.openstreetmap.org/reverse"
     params = {"lat": lat, "lon": lon, "format": "json"}
     try:
-        res = requests.get(url, params=params, headers=HEADERS, timeout=6)
+        res = requests.get(url_nom, params=params, headers=HEADERS, timeout=5)
         if res.status_code == 200:
             data = res.json()
             if data:
                 address = data.get("address", {})
-                suburb = address.get("suburb") or address.get("neighbourhood") or address.get("residential") or address.get("road") or "Local Area"
-                city = address.get("city") or address.get("state_district") or address.get("state") or "India"
+                suburb = address.get("suburb") or address.get("neighbourhood") or address.get("residential") or address.get("road") or address.get("subdistrict") or "Local Area"
+                city = address.get("city") or address.get("town") or address.get("state_district") or address.get("state") or "India"
                 return f"{suburb}, {city}"
     except Exception:
         pass
-    return f"{lat:.4f}, {lon:.4f}"
+
+    return f"Station ({lat:.2f}°N, {lon:.2f}°E)"
 
 def fetch_live_air_quality_by_coords(lat: float, lon: float, location_name: str = ""):
     """Atmospheric telemetry via Open-Meteo with CPCB subindex interpolation"""
