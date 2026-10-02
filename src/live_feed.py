@@ -45,6 +45,66 @@ def calculate_cpcb_subindex_pm10(conc: float) -> int:
     else:
         return int(400 + (100 / 70) * (conc - 430))
 
+def calculate_cpcb_subindex_no2(conc: float) -> int:
+    """Official Indian CPCB Breakpoint Interpolation for NO2 (µg/m³)"""
+    if conc <= 40:
+        return int((50 / 40) * conc)
+    elif conc <= 80:
+        return int(50 + (50 / 40) * (conc - 40))
+    elif conc <= 180:
+        return int(100 + (100 / 100) * (conc - 80))
+    elif conc <= 280:
+        return int(200 + (100 / 100) * (conc - 180))
+    elif conc <= 400:
+        return int(300 + (100 / 120) * (conc - 280))
+    else:
+        return int(400 + (100 / 120) * (conc - 400))
+
+def calculate_cpcb_subindex_so2(conc: float) -> int:
+    """Official Indian CPCB Breakpoint Interpolation for SO2 (µg/m³)"""
+    if conc <= 40:
+        return int((50 / 40) * conc)
+    elif conc <= 80:
+        return int(50 + (50 / 40) * (conc - 40))
+    elif conc <= 380:
+        return int(100 + (100 / 300) * (conc - 80))
+    elif conc <= 800:
+        return int(200 + (100 / 420) * (conc - 380))
+    elif conc <= 1600:
+        return int(300 + (100 / 800) * (conc - 800))
+    else:
+        return int(400 + (100 / 800) * (conc - 1600))
+
+def calculate_cpcb_subindex_co(conc_mg: float) -> int:
+    """Official Indian CPCB Breakpoint Interpolation for CO (mg/m³)"""
+    if conc_mg <= 1.0:
+        return int(50 * conc_mg)
+    elif conc_mg <= 2.0:
+        return int(50 + 50 * (conc_mg - 1.0))
+    elif conc_mg <= 10.0:
+        return int(100 + (100 / 8.0) * (conc_mg - 2.0))
+    elif conc_mg <= 17.0:
+        return int(200 + (100 / 7.0) * (conc_mg - 10.0))
+    elif conc_mg <= 34.0:
+        return int(300 + (100 / 17.0) * (conc_mg - 17.0))
+    else:
+        return int(400 + (100 / 17.0) * (conc_mg - 34.0))
+
+def calculate_cpcb_subindex_o3(conc: float) -> int:
+    """Official Indian CPCB Breakpoint Interpolation for O3 (µg/m³)"""
+    if conc <= 50:
+        return int(conc)
+    elif conc <= 100:
+        return int(50 + (50 / 50) * (conc - 50))
+    elif conc <= 168:
+        return int(100 + (100 / 68) * (conc - 100))
+    elif conc <= 208:
+        return int(200 + (100 / 40) * (conc - 168))
+    elif conc <= 748:
+        return int(300 + (100 / 540) * (conc - 208))
+    else:
+        return int(400 + (100 / 540) * (conc - 748))
+
 HEADERS = {"User-Agent": "Pravaah-AirQualityPlatform/1.0 (academic.cep@mu.ac.in)"}
 
 def geocode_place(query: str):
@@ -123,17 +183,38 @@ def reverse_geocode(lat: float, lon: float):
     return f"Station ({lat:.2f}°N, {lon:.2f}°E)"
 
 def fetch_live_air_quality_by_coords(lat: float, lon: float, location_name: str = ""):
-    """Atmospheric telemetry via Open-Meteo with CPCB subindex interpolation"""
-    url = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat}&longitude={lon}&current=pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide&timezone=Asia%2FKolkata"
+    """Atmospheric telemetry via Open-Meteo with 6-pollutant CPCB subindex interpolation"""
+    url = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat}&longitude={lon}&current=pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone&timezone=Asia%2FKolkata"
     try:
         r = requests.get(url, headers=HEADERS, timeout=6)
         if r.status_code == 200:
             cur = r.json().get("current", {})
             p25 = float(cur.get("pm2_5", 25.0))
             p10 = float(cur.get("pm10", 45.0))
-            sub_pm25 = calculate_cpcb_subindex_pm25(p25)
-            sub_pm10 = calculate_cpcb_subindex_pm10(p10)
-            cpcb_aqi = max(sub_pm25, sub_pm10)
+            no2 = float(cur.get("nitrogen_dioxide", 14.0))
+            so2 = float(cur.get("sulphur_dioxide", 6.0))
+            co_ug = float(cur.get("carbon_monoxide", 800.0))
+            co_mg = co_ug / 1000.0 if co_ug > 20 else co_ug
+            o3  = float(cur.get("ozone", 22.0))
+
+            sub_p25 = calculate_cpcb_subindex_pm25(p25)
+            sub_p10 = calculate_cpcb_subindex_pm10(p10)
+            sub_no2 = calculate_cpcb_subindex_no2(no2)
+            sub_so2 = calculate_cpcb_subindex_so2(so2)
+            sub_co  = calculate_cpcb_subindex_co(co_mg)
+            sub_o3  = calculate_cpcb_subindex_o3(o3)
+
+            sub_map = {
+                "PM2.5": sub_p25,
+                "PM10": sub_p10,
+                "NO₂": sub_no2,
+                "SO₂": sub_so2,
+                "CO": sub_co,
+                "O₃": sub_o3
+            }
+
+            dominant_pol = max(sub_map, key=sub_map.get)
+            cpcb_aqi = sub_map[dominant_pol]
             
             return {
                 "location": location_name,
@@ -143,10 +224,13 @@ def fetch_live_air_quality_by_coords(lat: float, lon: float, location_name: str 
                 "aqi": cpcb_aqi,
                 "pm25": round(p25, 1),
                 "pm10": round(p10, 1),
-                "no2": round(float(cur.get("nitrogen_dioxide", 12.0)), 1),
-                "so2": round(float(cur.get("sulphur_dioxide", 5.0)), 1),
-                "dominant_pollutant": "PM2.5" if sub_pm25 >= sub_pm10 else "PM10",
-                "source": "Open-Meteo Atmospheric Grid (CPCB Standard)"
+                "no2": round(no2, 1),
+                "so2": round(so2, 1),
+                "co": round(co_mg, 2),
+                "o3": round(o3, 1),
+                "subindexes": sub_map,
+                "dominant_pollutant": dominant_pol,
+                "source": "Open-Meteo Atmospheric Grid (CPCB 6-Pollutant Standard)"
             }
     except Exception:
         pass
