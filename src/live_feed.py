@@ -105,10 +105,72 @@ def calculate_cpcb_subindex_o3(conc: float) -> int:
     else:
         return int(400 + (100 / 540) * (conc - 748))
 
-HEADERS = {"User-Agent": "Pravaah-AirQualityPlatform/1.0 (academic.cep@mu.ac.in)"}
+INDIAN_GAZETTEER = {
+    "anand vihar": (28.6469, 77.3160, "Anand Vihar, Delhi"),
+    "ito": (28.6315, 77.2492, "ITO, Delhi"),
+    "sector 62": (28.6271, 77.3725, "Sector 62, Noida"),
+    "noida": (28.5355, 77.3910, "Noida, Uttar Pradesh"),
+    "gurugram": (28.4595, 77.0266, "Gurugram, Haryana"),
+    "gurgaon": (28.4595, 77.0266, "Gurugram, Haryana"),
+    "whitefield": (12.9698, 77.7500, "Whitefield, Bengaluru"),
+    "bkc": (19.0657, 72.8687, "BKC Bandra, Mumbai"),
+    "chembur": (19.0522, 72.8994, "Chembur, Mumbai"),
+    "colaba": (18.9067, 72.8147, "Colaba, Mumbai"),
+    "connaught place": (28.6315, 77.2167, "Connaught Place, Delhi"),
+    "cp": (28.6315, 77.2167, "Connaught Place, Delhi"),
+    "patna": (25.5941, 85.1376, "Patna, Bihar"),
+    "lucknow": (26.8467, 80.9462, "Lucknow, Uttar Pradesh"),
+    "kanpur": (26.4499, 80.3319, "Kanpur, Uttar Pradesh"),
+    "varanasi": (25.3176, 82.9739, "Varanasi, Uttar Pradesh"),
+    "amritsar": (31.6200, 74.8765, "Amritsar, Punjab"),
+    "jaipur": (26.9015, 75.8286, "Jaipur, Rajasthan"),
+    "jodhpur": (26.2389, 73.0243, "Jodhpur, Rajasthan"),
+    "chandigarh": (30.7333, 76.7794, "Chandigarh, India"),
+    "kolkata": (22.5726, 88.3639, "Kolkata, West Bengal"),
+    "howrah": (22.5958, 88.2636, "Howrah, West Bengal"),
+    "bhubaneswar": (20.2961, 85.8245, "Bhubaneswar, Odisha"),
+    "ranchi": (23.3441, 85.3096, "Ranchi, Jharkhand"),
+    "guwahati": (26.1445, 91.7362, "Guwahati, Assam"),
+    "bhopal": (23.2599, 77.4126, "Bhopal, Madhya Pradesh"),
+    "indore": (22.7196, 75.8577, "Indore, Madhya Pradesh"),
+    "pune": (18.5204, 73.8567, "Pune, Maharashtra"),
+    "nagpur": (21.1458, 79.0882, "Nagpur, Maharashtra"),
+    "ahmedabad": (23.0225, 72.5714, "Ahmedabad, Gujarat"),
+    "surat": (21.1702, 72.8311, "Surat, Gujarat"),
+    "bengaluru": (12.9716, 77.5946, "Bengaluru, Karnataka"),
+    "bangalore": (12.9716, 77.5946, "Bengaluru, Karnataka"),
+    "chennai": (13.0827, 80.2707, "Chennai, Tamil Nadu"),
+    "hyderabad": (17.3850, 78.4867, "Hyderabad, Telangana"),
+    "kochi": (9.9312, 76.2673, "Kochi, Kerala")
+}
 
 def geocode_place(query: str):
-    # Primary: Open-Meteo Geocoding API (Fast, with User-Agent header)
+    q_lower = query.strip().lower()
+
+    # 1. Instant Gazetteer Lookup for Indian Landmarks & Stations
+    for key, val in INDIAN_GAZETTEER.items():
+        if key in q_lower:
+            return {
+                "lat": val[0],
+                "lon": val[1],
+                "display_name": val[2]
+            }
+
+    # 2. Primary: Nominatim OpenStreetMap (Best for local sectors, neighborhoods & PIN codes)
+    url_nom = f"https://nominatim.openstreetmap.org/search?q={urllib.parse.quote(query)}&countrycodes=in&format=json&limit=1"
+    try:
+        res = requests.get(url_nom, headers=HEADERS, timeout=6)
+        if res.status_code == 200 and res.json():
+            item = res.json()[0]
+            return {
+                "lat": float(item["lat"]),
+                "lon": float(item["lon"]),
+                "display_name": item.get("display_name", query)
+            }
+    except Exception:
+        pass
+
+    # 3. Secondary: Open-Meteo Geocoding API
     url_om = f"https://geocoding-api.open-meteo.com/v1/search?name={urllib.parse.quote(query)}&count=1&language=en&format=json"
     try:
         res = requests.get(url_om, headers=HEADERS, timeout=6)
@@ -128,21 +190,6 @@ def geocode_place(query: str):
     except Exception:
         pass
 
-    # Secondary Fallback: Nominatim OpenStreetMap
-    url_nom = "https://nominatim.openstreetmap.org/search"
-    params = {"q": f"{query}, India", "format": "json", "limit": 1}
-    try:
-        res = requests.get(url_nom, params=params, headers=HEADERS, timeout=6)
-        if res.status_code == 200:
-            data = res.json()
-            if data:
-                return {
-                    "lat": float(data[0]["lat"]),
-                    "lon": float(data[0]["lon"]),
-                    "display_name": data[0]["display_name"]
-                }
-    except Exception:
-        pass
     return None
 
 def reverse_geocode(lat: float, lon: float):
