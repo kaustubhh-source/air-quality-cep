@@ -15,6 +15,8 @@ try:
 except Exception:
     pass
 
+HEADERS = {"User-Agent": "Pravaah-AirQualityPlatform/1.0 (academic.cep@mu.ac.in)"}
+
 def calculate_cpcb_subindex_pm25(conc: float) -> int:
     """Official Indian CPCB Breakpoint Interpolation for PM2.5"""
     if conc <= 30:
@@ -228,7 +230,28 @@ def clean_display_name(raw_name: str, query: str = "") -> str:
     return f"{first}, India"
 
 def geocode_place(query: str):
-    q_lower = query.strip().lower()
+    q_clean = query.strip()
+    q_lower = q_clean.lower()
+
+    # 0. Instant PIN Code Lookup for 6-digit Indian Postal Codes (e.g. 400071, 110001, 560066)
+    if q_clean.isdigit() and len(q_clean) == 6:
+        url_pin = f"https://nominatim.openstreetmap.org/search?postalcode={q_clean}&country=India&format=json"
+        try:
+            res = requests.get(url_pin, headers=HEADERS, timeout=6)
+            if res.status_code == 200 and res.json():
+                item = res.json()[0]
+                lat = float(item["lat"])
+                lon = float(item["lon"])
+                raw_disp = item.get("display_name", "")
+                parts = [p.strip() for p in raw_disp.split(",") if p.strip() and not p.strip().isdigit() and "zone" not in p.strip().lower() and "ward" not in p.strip().lower()]
+                place_str = f"{parts[0]}, {parts[1]}" if len(parts) >= 2 else (parts[0] if parts else "India")
+                return {
+                    "lat": lat,
+                    "lon": lon,
+                    "display_name": f"PIN {q_clean} ({place_str})"
+                }
+        except Exception:
+            pass
 
     # 1. Instant Gazetteer Lookup for Indian Landmarks & Sub-cities
     for key, val in INDIAN_GAZETTEER.items():
