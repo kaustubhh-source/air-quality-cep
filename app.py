@@ -504,8 +504,152 @@ with tab1:
         st.plotly_chart(fig_hourly, use_container_width=True, config={"displayModeBar": False, "responsive": True})
         st.caption(f"💡 **Data Alignment Note:** Lower numeric values indicate cleaner air. The safe outdoor window (**{opt_start_fmt} – {opt_end_fmt}**) highlights the 3-hour minimum pollution trough.")
 
-    st.markdown("### 🏡 Practical Health Directives")
-    st.info(f"**Primary Health Guidance:** {clinical_adv}\n\n**Actionable Safeguard:** {action_adv}")
+    st.markdown("---")
+    target_city_name = st.session_state["target_name"].split(",")[0].strip()
+    st.markdown(f"### 🏡 Practical Health Directives & Protection Blueprint — **{target_city_name}**")
+    st.caption("Actionable medical guidance, demographic protection strategies, and household safeguards based on CPCB AQI")
+
+    # Dynamic status pill & severity parameters
+    if aqi_val <= 50:
+        sev_color = "#00B050"
+        status_title = "Clean Air — Safe Condition"
+        adv_fitness = "Outdoor cardio, running, and sports are fully safe across all hours."
+        adv_children = "School sports, outdoor recess, and PE activities can proceed normally."
+        adv_sensitive = "No special precautions required. Safe for asthma and heart patients."
+        adv_commuters = "Natural ventilation is safe during commutes."
+        adv_indoor = "Keep windows open during mid-day to refresh indoor air."
+    elif aqi_val <= 100:
+        sev_color = "#92D050"
+        status_title = "Satisfactory Air — Minor Impact"
+        adv_fitness = "Safe for normal daily exercise. Unusually sensitive runners monitor breathing."
+        adv_children = "Outdoor play permitted. Teachers monitor students with known asthma."
+        adv_sensitive = "Keep rescue inhalers accessible during morning outdoor walks."
+        adv_commuters = "Wear light masks if commuting on open two-wheelers near heavy traffic."
+        adv_indoor = "Aerate home during afternoon solar heating hours."
+    elif aqi_val <= 200:
+        sev_color = "#FFC000"
+        status_title = "Moderate Air — Unhealthy for Sensitive Groups"
+        adv_fitness = f"Shift heavy outdoor workouts to the cleanest daily trough ({opt_start_fmt} – {opt_end_fmt}) or exercise indoors."
+        adv_children = "Limit intense outdoor school sports sessions; move long PE activities indoors."
+        adv_sensitive = "Reduce prolonged outdoor exertion. Use indoor air purifiers in bedrooms."
+        adv_commuters = "Switch car air vents to Recirculation Mode; wear N95 mask on open roads."
+        adv_indoor = "Keep windows closed during early morning inversion (06:00-08:30 AM)."
+    elif aqi_val <= 300:
+        sev_color = "#FF7C80"
+        status_title = "Poor Air — Respiratory Illness Risk"
+        adv_fitness = "❌ Avoid outdoor running and cycling. Perform workouts indoors with air purification."
+        adv_children = "❌ Cancel outdoor school sports & recess. Children should stay indoors."
+        adv_sensitive = "Remain indoors as much as possible. Keep SpO2 monitor and medicines ready."
+        adv_commuters = "Certified N95 / FFP2 masks mandatory for two-wheeler and auto-rickshaw commuters."
+        adv_indoor = "Run HEPA air purifiers continuously. Seal windows against outdoor smog."
+    elif aqi_val <= 400:
+        sev_color = "#C00000"
+        status_title = "Very Poor Air — High Health Risk"
+        adv_fitness = "⛔ Strictly avoid outdoor cardio; high risk of chest tightness and lung damage."
+        adv_children = "⛔ Keep children strictly indoors in air-purified rooms."
+        adv_sensitive = "High risk for heart/lung conditions. Seek medical advice if breathlessness occurs."
+        adv_commuters = "Avoid non-essential travel. Wear N95 masks even for short outdoor walks."
+        adv_indoor = "Seal window crevices; operate HEPA purifiers on high speed."
+    else:
+        sev_color = "#7030A0"
+        status_title = "Severe Toxic Smog Emergency"
+        adv_fitness = "⛔ CRITICAL EMERGENCY: No outdoor physical exertion under any circumstances."
+        adv_children = "⛔ Emergency lockdown: keep children indoors in sealed air-purified rooms."
+        adv_sensitive = "Critical alert: keep oxygen/nebulizer support ready if prescribed."
+        adv_commuters = "Avoid all outdoor exposure; wear N95 mask if stepping out is unavoidable."
+        adv_indoor = "Operate air purifiers continuously; avoid indoor combustion (incense, candles)."
+
+    # 1. Primary Banner Card
+    st.markdown(f"""
+    <div class="metric-card" style="border-left: 6px solid {sev_color}; background: rgba(0, 0, 0, 0.25); padding: 18px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+                <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: #888;">Current Health Advisory Baseline</span>
+                <div style="font-size: 20px; font-weight: 900; color: #ffffff; margin-top: 2px;">{status_title}</div>
+            </div>
+            <div style="background: {sev_color}33; border: 1px solid {sev_color}; color: {sev_color}; font-weight: 800; font-size: 13px; padding: 5px 14px; border-radius: 16px;">
+                AQI {aqi_val} — {cat_name}
+            </div>
+        </div>
+        <div style="font-size: 13px; color: #ddd; margin-top: 10px; line-height: 1.5;">
+            <b>Clinical Impact:</b> {clinical_adv}<br>
+            <b>Immediate Action:</b> {action_adv}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 2. Demographic Action Cards (4 Columns)
+    st.markdown("#### 👥 Group-Specific Action Directives")
+    demo_c1, demo_c2, demo_c3, demo_c4 = st.columns(4)
+
+    with demo_c1:
+        st.markdown(f"""
+        <div class="metric-card" style="border-top: 3px solid #00D2FF; height: 100%;">
+            <div style="font-size: 22px;">🏃</div>
+            <div style="font-size: 14px; font-weight: 800; color: #fff; margin: 4px 0;">Athletes & Fitness</div>
+            <div style="font-size: 11.5px; color: #ccc; line-height: 1.45;">{adv_fitness}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with demo_c2:
+        st.markdown(f"""
+        <div class="metric-card" style="border-top: 3px solid #FFC000; height: 100%;">
+            <div style="font-size: 22px;">🎒</div>
+            <div style="font-size: 14px; font-weight: 800; color: #fff; margin: 4px 0;">Children & Schools</div>
+            <div style="font-size: 11.5px; color: #ccc; line-height: 1.45;">{adv_children}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with demo_c3:
+        st.markdown(f"""
+        <div class="metric-card" style="border-top: 3px solid #FF5252; height: 100%;">
+            <div style="font-size: 22px;">🫁</div>
+            <div style="font-size: 14px; font-weight: 800; color: #fff; margin: 4px 0;">Sensitive & Elderly</div>
+            <div style="font-size: 11.5px; color: #ccc; line-height: 1.45;">{adv_sensitive}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with demo_c4:
+        st.markdown(f"""
+        <div class="metric-card" style="border-top: 3px solid #00B050; height: 100%;">
+            <div style="font-size: 22px;">🛵</div>
+            <div style="font-size: 14px; font-weight: 800; color: #fff; margin: 4px 0;">Commuters & Drivers</div>
+            <div style="font-size: 11.5px; color: #ccc; line-height: 1.45;">{adv_commuters}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # 3. Household & Physiological Protection Blueprint (2 Columns)
+    st.markdown("<div style='margin-top: 14px;'></div>", unsafe_allow_html=True)
+    prot_c1, prot_c2 = st.columns(2)
+
+    with prot_c1:
+        st.markdown(f"""
+        <div class="metric-card" style="border-left: 4px solid #00D2FF;">
+            <div style="font-size: 14px; font-weight: 800; color: #00D2FF; margin-bottom: 8px;">🏠 Household & Indoor Air Management</div>
+            <div style="font-size: 12px; color: #ddd; line-height: 1.5;">
+                • <b>Window Ventilation:</b> {adv_indoor}<br>
+                • <b>Air Purification:</b> Keep True HEPA filters running in active living areas & bedrooms.<br>
+                • <b>Avoid Indoor Pollution:</b> Refrain from burning incense sticks, candles, or indoor frying during high AQI alerts.<br>
+                • <b>Natural Air Cleansers:</b> Place Snake Plants (Sansevieria) and Areca Palms indoors to absorb volatile compounds.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with prot_c2:
+        st.markdown(f"""
+        <div class="metric-card" style="border-left: 4px solid #FFC000;">
+            <div style="font-size: 14px; font-weight: 800; color: #FFC000; margin-bottom: 8px;">🫗 Physiological Defense & Hydration</div>
+            <div style="font-size: 12px; color: #ddd; line-height: 1.5;">
+                • <b>Hydration Target:</b> Drink 2.5–3 liters of warm water daily to flush absorbed particulate toxins.<br>
+                • <b>Herbal Respiratory Decoction:</b> Sip warm tea brewed with ginger, turmeric, tulsi (holy basil), and black pepper.<br>
+                • <b>Steam Inhalation:</b> Perform 5 minutes of steam inhalation before sleep to clear upper airway congestion.<br>
+                • <b>Antioxidant Diet:</b> Consume Vitamin C & E rich foods (citrus fruits, nuts, jaggery) to combat PM2.5 oxidative stress.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # 4. Red-Flag Medical Warning Box
+    st.warning("🚨 **RED-FLAG MEDICAL WARNING:** Seek immediate emergency medical assistance if you experience persistent chest tightness, severe shortness of breath, blood oxygen ($SpO_2$) dropping below 94%, or unyielding coughing fits.")
 
 # =============================================================
 # TAB 2: ML FORECAST & EXPLAINABLE AI (XAI)
