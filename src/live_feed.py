@@ -543,6 +543,7 @@ def reverse_geocode(lat: float, lon: float):
 
     return f"Station ({lat:.2f}°N, {lon:.2f}°E)"
 
+@st.cache_data(ttl=900)
 def fetch_live_air_quality_by_coords(lat: float, lon: float, location_name: str = ""):
     """Atmospheric telemetry via Open-Meteo with CPCB subindex interpolation and ground anchoring"""
     url = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat}&longitude={lon}&current=pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone,us_aqi&timezone=Asia%2FKolkata"
@@ -666,11 +667,10 @@ def generate_regional_fallback(lat: float, lon: float, location_name: str):
         "source": "Regional Atmospheric Telemetry (CPCB Standard)"
     }
 
-@st.cache_data(ttl=900)
 def fetch_live_ground_sensor(lat: float, lon: float, fallback_name: str = "Chembur, Mumbai"):
     """
     Ingests high-precision real-time telemetry via CAAQMS Atmospheric Grid (CPCB Standard).
-    Cached for 15 minutes to guarantee stable, consistent, fast user experience.
+    Evaluates active field calibrations dynamically on every run.
     """
     # 0. Check for Active Admin Field Calibration Override
     try:

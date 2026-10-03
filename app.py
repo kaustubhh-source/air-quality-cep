@@ -1261,12 +1261,14 @@ if tab5 is not None:
                 cal_notes = st.text_input("Field Note / Spot Details", value="Chembur Public Board Calibration (Field Visit)")
                 if st.form_submit_button("⚡ Apply Field Calibration"):
                     set_field_calibration(cal_loc, cal_aqi, cal_notes)
+                    st.cache_data.clear()
                     st.success(f"Calibration active! Telemetry anchored to AQI {cal_aqi} for {cal_loc}.")
                     st.rerun()
 
             if curr_cal:
                 if st.button("🔄 Reset & Restore Live Satellite Telemetry", use_container_width=True):
                     clear_field_calibration()
+                    st.cache_data.clear()
                     st.info("Field calibration reset. Automated live telemetry restored.")
                     st.rerun()
 

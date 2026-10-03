@@ -79,9 +79,12 @@ def get_field_calibration(location_query: str = ""):
         conn = get_connection()
         c = conn.cursor()
         if location_query:
+            clean_q = location_query.lower().split(',')[0].strip()
             row = c.execute(
-                "SELECT override_aqi, location_query, notes FROM field_calibrations WHERE is_active = 1 AND LOWER(location_query) LIKE ? ORDER BY id DESC LIMIT 1",
-                (f"%{location_query.lower().split(',')[0]}%",)
+                """SELECT override_aqi, location_query, notes FROM field_calibrations 
+                   WHERE is_active = 1 AND (LOWER(location_query) LIKE ? OR LOWER(?) LIKE '%' || LOWER(location_query) || '%') 
+                   ORDER BY id DESC LIMIT 1""",
+                (f"%{clean_q}%", clean_q)
             ).fetchone()
             if row:
                 conn.close()
