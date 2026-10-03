@@ -1244,25 +1244,33 @@ if tab5 is not None:
 
             # Field Visit Live Public Display Sync Panel
             st.markdown("#### 🎯 Field Visit Calibration & Live Public Display Sync")
-            st.caption("Synchronize PRAVAAH dashboard telemetry to match physical CPCB public display boards during field visits.")
+            st.caption("Synchronize PRAVAAH dashboard telemetry (AQI, PM2.5, PM10) to match physical CPCB public display boards during spot audits.")
             
             curr_cal = get_field_calibration(st.session_state["target_name"])
             if curr_cal:
-                st.warning(f"⚡ **ACTIVE FIELD CALIBRATION**: `{curr_cal['location_query']}` $\\rightarrow$ **AQI {curr_cal['override_aqi']}** ({curr_cal['notes']})")
+                pm25_str = f" | PM2.5: {curr_cal['override_pm25']} µg/m³" if curr_cal.get('override_pm25') else ""
+                pm10_str = f" | PM10: {curr_cal['override_pm10']} µg/m³" if curr_cal.get('override_pm10') else ""
+                st.warning(f"⚡ **ACTIVE FIELD CALIBRATION**: `{curr_cal['location_query']}` $\\rightarrow$ **AQI {curr_cal['override_aqi']}**{pm25_str}{pm10_str} ({curr_cal['notes']})")
 
             with st.form("field_cal_form"):
-                cal_c1, cal_c2 = st.columns([2.2, 1])
+                cal_c1, cal_c2, cal_c3, cal_c4 = st.columns([2, 1, 1, 1])
                 with cal_c1:
                     cal_loc = st.text_input("Target Location Query", value=st.session_state["target_name"], help="Location name to anchor field calibration")
                 with cal_c2:
-                    default_cal_val = curr_cal['override_aqi'] if curr_cal else 175
-                    cal_aqi = st.number_input("Live Public Display AQI", min_value=1, max_value=999, value=default_cal_val, step=1)
+                    default_cal_val = curr_cal['override_aqi'] if curr_cal and curr_cal.get('override_aqi') else 175
+                    cal_aqi = st.number_input("Public Display AQI", min_value=1, max_value=999, value=default_cal_val, step=1)
+                with cal_c3:
+                    default_pm25 = float(curr_cal['override_pm25']) if curr_cal and curr_cal.get('override_pm25') else 75.0
+                    cal_pm25 = st.number_input("Spot PM2.5 (µg/m³)", min_value=0.0, max_value=1000.0, value=default_pm25, step=1.0)
+                with cal_c4:
+                    default_pm10 = float(curr_cal['override_pm10']) if curr_cal and curr_cal.get('override_pm10') else 180.0
+                    cal_pm10 = st.number_input("Spot PM10 (µg/m³)", min_value=0.0, max_value=1500.0, value=default_pm10, step=1.0)
                 
                 cal_notes = st.text_input("Field Note / Spot Details", value="Chembur Public Board Calibration (Field Visit)")
                 if st.form_submit_button("⚡ Apply Field Calibration"):
-                    set_field_calibration(cal_loc, cal_aqi, cal_notes)
+                    set_field_calibration(cal_loc, cal_aqi, cal_notes, override_pm25=cal_pm25, override_pm10=cal_pm10)
                     st.cache_data.clear()
-                    st.success(f"Calibration active! Telemetry anchored to AQI {cal_aqi} for {cal_loc}.")
+                    st.success(f"Calibration active! Telemetry anchored to AQI {cal_aqi}, PM2.5: {cal_pm25} µg/m³, PM10: {cal_pm10} µg/m³ for {cal_loc}.")
                     st.rerun()
 
             if curr_cal:

@@ -676,30 +676,51 @@ def fetch_live_ground_sensor(lat: float, lon: float, fallback_name: str = "Chemb
     try:
         from src.db import get_field_calibration
         cal = get_field_calibration(fallback_name)
-        if cal and cal.get("override_aqi"):
-            target_aqi = int(cal["override_aqi"])
-            # Reverse CPCB breakpoint interpolation for PM2.5 and PM10 to match target_aqi
-            if target_aqi <= 50:
-                pm25 = (30 / 50) * target_aqi
-                pm10 = float(target_aqi)
-            elif target_aqi <= 100:
-                pm25 = 30 + (30 / 50) * (target_aqi - 50)
-                pm10 = 50 + (50 / 50) * (target_aqi - 50)
-            elif target_aqi <= 200:
-                pm25 = 60 + (30 / 100) * (target_aqi - 100)
-                pm10 = 100 + (150 / 100) * (target_aqi - 100)
-            elif target_aqi <= 300:
-                pm25 = 90 + (30 / 100) * (target_aqi - 200)
-                pm10 = 250 + (100 / 100) * (target_aqi - 200)
-            elif target_aqi <= 400:
-                pm25 = 120 + (130 / 100) * (target_aqi - 300)
-                pm10 = 350 + (80 / 100) * (target_aqi - 300)
+        if cal and (cal.get("override_aqi") or cal.get("override_pm25") or cal.get("override_pm10")):
+            target_aqi = int(cal["override_aqi"]) if cal.get("override_aqi") else 100
+            
+            # Use explicit PM2.5 if provided, else interpolate from target_aqi
+            if cal.get("override_pm25") is not None and float(cal["override_pm25"]) > 0:
+                pm25 = float(cal["override_pm25"])
             else:
-                pm25 = 250 + (130 / 100) * (target_aqi - 400)
-                pm10 = 430 + (70 / 100) * (target_aqi - 400)
+                if target_aqi <= 50:
+                    pm25 = (30 / 50) * target_aqi
+                elif target_aqi <= 100:
+                    pm25 = 30 + (30 / 50) * (target_aqi - 50)
+                elif target_aqi <= 200:
+                    pm25 = 60 + (30 / 100) * (target_aqi - 100)
+                elif target_aqi <= 300:
+                    pm25 = 90 + (30 / 100) * (target_aqi - 200)
+                elif target_aqi <= 400:
+                    pm25 = 120 + (130 / 100) * (target_aqi - 300)
+                else:
+                    pm25 = 250 + (130 / 100) * (target_aqi - 400)
+
+            # Use explicit PM10 if provided, else interpolate from target_aqi
+            if cal.get("override_pm10") is not None and float(cal["override_pm10"]) > 0:
+                pm10 = float(cal["override_pm10"])
+            else:
+                if target_aqi <= 50:
+                    pm10 = float(target_aqi)
+                elif target_aqi <= 100:
+                    pm10 = 50 + (50 / 50) * (target_aqi - 50)
+                elif target_aqi <= 200:
+                    pm10 = 100 + (150 / 100) * (target_aqi - 100)
+                elif target_aqi <= 300:
+                    pm10 = 250 + (100 / 100) * (target_aqi - 200)
+                elif target_aqi <= 400:
+                    pm10 = 350 + (80 / 100) * (target_aqi - 300)
+                else:
+                    pm10 = 430 + (70 / 100) * (target_aqi - 400)
 
             sub_pm25 = calculate_cpcb_subindex_pm25(pm25)
             sub_pm10 = calculate_cpcb_subindex_pm10(pm10)
+            
+            # If explicit PM values provided, ensure AQI reflects max CPCB subindex
+            if cal.get("override_pm25") is not None or cal.get("override_pm10") is not None:
+                calc_cal_aqi = max(sub_pm25, sub_pm10)
+                if not cal.get("override_aqi"):
+                    target_aqi = calc_cal_aqi
 
             return {
                 "location": fallback_name,

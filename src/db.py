@@ -26,7 +26,6 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             message TEXT,
             severity TEXT,
-            is_active INTEGER DEFAULT 1,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
@@ -35,11 +34,23 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             location_query TEXT,
             override_aqi INTEGER,
+            override_pm25 REAL,
+            override_pm10 REAL,
             notes TEXT,
             is_active INTEGER DEFAULT 1,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    # Schema migration for existing databases
+    try:
+        c.execute("ALTER TABLE field_calibrations ADD COLUMN override_pm25 REAL")
+    except Exception:
+        pass
+    try:
+        c.execute("ALTER TABLE field_calibrations ADD COLUMN override_pm10 REAL")
+    except Exception:
+        pass
+
     conn.commit()
     conn.close()
 
@@ -81,33 +92,45 @@ def get_field_calibration(location_query: str = ""):
         if location_query:
             clean_q = location_query.lower().split(',')[0].strip()
             row = c.execute(
-                """SELECT override_aqi, location_query, notes FROM field_calibrations 
+                """SELECT override_aqi, location_query, notes, override_pm25, override_pm10 FROM field_calibrations 
                    WHERE is_active = 1 AND (LOWER(location_query) LIKE ? OR LOWER(?) LIKE '%' || LOWER(location_query) || '%') 
                    ORDER BY id DESC LIMIT 1""",
                 (f"%{clean_q}%", clean_q)
             ).fetchone()
             if row:
                 conn.close()
-                return {"override_aqi": row[0], "location_query": row[1], "notes": row[2]}
+                return {
+                    "override_aqi": row[0],
+                    "location_query": row[1],
+                    "notes": row[2],
+                    "override_pm25": row[3] if len(row) > 3 and row[3] is not None else None,
+                    "override_pm10": row[4] if len(row) > 4 and row[4] is not None else None
+                }
         
         # Fallback to global active calibration
         row = c.execute(
-            "SELECT override_aqi, location_query, notes FROM field_calibrations WHERE is_active = 1 ORDER BY id DESC LIMIT 1"
+            "SELECT override_aqi, location_query, notes, override_pm25, override_pm10 FROM field_calibrations WHERE is_active = 1 ORDER BY id DESC LIMIT 1"
         ).fetchone()
         conn.close()
         if row:
-            return {"override_aqi": row[0], "location_query": row[1], "notes": row[2]}
+            return {
+                "override_aqi": row[0],
+                "location_query": row[1],
+                "notes": row[2],
+                "override_pm25": row[3] if len(row) > 3 and row[3] is not None else None,
+                "override_pm10": row[4] if len(row) > 4 and row[4] is not None else None
+            }
     except Exception:
         pass
     return None
 
-def set_field_calibration(location_query: str, override_aqi: int, notes: str = "Field Visit Public Display Calibration"):
-    """Sets an active field calibration AQI override."""
+def set_field_calibration(location_query: str, override_aqi: int, notes: str = "Field Visit Public Display Calibration", override_pm25: float = None, override_pm10: float = None):
+    """Sets an active field calibration AQI, PM2.5, and PM10 override."""
     conn = get_connection()
     conn.execute("UPDATE field_calibrations SET is_active = 0 WHERE is_active = 1")
     conn.execute(
-        "INSERT INTO field_calibrations (location_query, override_aqi, notes, is_active) VALUES (?, ?, ?, 1)",
-        (location_query, int(override_aqi), notes)
+        "INSERT INTO field_calibrations (location_query, override_aqi, override_pm25, override_pm10, notes, is_active) VALUES (?, ?, ?, ?, ?, 1)",
+        (location_query, int(override_aqi), override_pm25, override_pm10, notes)
     )
     conn.commit()
     conn.close()
@@ -154,3 +177,9 @@ def get_symptom_registry(limit: int = 50):
         return df
     except Exception:
         return pd.DataFrame(columns=["id", "location", "symptom", "severity", "logged_at"])
+
+# Initialize DB and run schema migrations automatically
+try:
+    init_db()
+except Exception:
+    pass
