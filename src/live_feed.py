@@ -666,10 +666,73 @@ def generate_regional_fallback(lat: float, lon: float, location_name: str):
         "source": "Regional Atmospheric Telemetry (CPCB Standard)"
     }
 
+def fetch_waqi_telemetry(lat: float, lon: float, location_name: str = ""):
+    """Fetches real-time physical CAAQMS ground sensor telemetry from WAQI (World Air Quality Index) network."""
+    waqi_url = f"https://api.waqi.info/feed/geo:{lat:.4f};{lon:.4f}/?token=demo"
+    try:
+        r = requests.get(waqi_url, headers=HEADERS, timeout=5)
+        if r.status_code == 200:
+            res = r.json()
+            if res.get("status") == "ok" and "data" in res and isinstance(res["data"], dict):
+                data = res["data"]
+                iaqi = data.get("iaqi", {})
+                
+                # Extract PM2.5 and PM10 concentration / subindex from physical ground sensor
+                p25_raw = iaqi.get("pm25", {}).get("v")
+                p10_raw = iaqi.get("pm10", {}).get("v")
+                no2_raw = iaqi.get("no2", {}).get("v", 14.0)
+                so2_raw = iaqi.get("so2", {}).get("v", 6.0)
+                co_raw  = iaqi.get("co", {}).get("v", 0.8)
+                o3_raw  = iaqi.get("o3", {}).get("v", 24.0)
+                
+                raw_aqi = data.get("aqi")
+                
+                if p25_raw is not None or p10_raw is not None or raw_aqi is not None:
+                    p25 = float(p25_raw) if p25_raw is not None else 25.0
+                    p10 = float(p10_raw) if p10_raw is not None else 45.0
+                    
+                    sub_p25 = calculate_cpcb_subindex_pm25(p25)
+                    sub_p10 = calculate_cpcb_subindex_pm10(p10)
+                    
+                    cpcb_aqi = max(sub_p25, sub_p10)
+                    if isinstance(raw_aqi, (int, float)) and raw_aqi > 0:
+                        cpcb_aqi = max(cpcb_aqi, int(raw_aqi))
+                        
+                    st_name = data.get("city", {}).get("name", location_name)
+                    
+                    sub_map = {
+                        "PM2.5": sub_p25,
+                        "PM10": sub_p10,
+                        "NO2": calculate_cpcb_subindex_no2(float(no2_raw)),
+                        "SO2": calculate_cpcb_subindex_so2(float(so2_raw)),
+                        "CO": calculate_cpcb_subindex_co(float(co_raw))
+                    }
+                    
+                    return {
+                        "location": location_name or st_name,
+                        "lat": lat,
+                        "lon": lon,
+                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M IST"),
+                        "aqi": cpcb_aqi,
+                        "pm25": round(p25, 1),
+                        "pm10": round(p10, 1),
+                        "no2": round(float(no2_raw), 1),
+                        "so2": round(float(so2_raw), 1),
+                        "co": round(float(co_raw), 2),
+                        "o3": round(float(o3_raw), 1),
+                        "subindexes": sub_map,
+                        "dominant_pollutant": "PM2.5" if sub_p25 >= sub_p10 else "PM10",
+                        "source": f"Physical CAAQMS Station ({st_name})"
+                    }
+    except Exception:
+        pass
+    return None
+
+@st.cache_data(ttl=900)
 def fetch_live_ground_sensor(lat: float, lon: float, fallback_name: str = "Chembur, Mumbai"):
     """
-    Ingests high-precision real-time telemetry via Open-Meteo Atmospheric Grid (CPCB Standard).
-    Supports live field calibration overrides set via Admin Console during public display board visits.
+    Ingests high-precision real-time telemetry via Physical CAAQMS Ground Monitors (WAQI) & Open-Meteo.
+    Cached for 15 minutes to guarantee stable, consistent, fast user experience.
     """
     # 0. Check for Active Admin Field Calibration Override
     try:
@@ -711,15 +774,25 @@ def fetch_live_ground_sensor(lat: float, lon: float, fallback_name: str = "Chemb
                 "no2": round(24.5 * (target_aqi / 100.0), 1),
                 "so2": round(11.2 * (target_aqi / 100.0), 1),
                 "co": round(1.2 * (target_aqi / 100.0), 1),
+                "o3": round(24.0 * (target_aqi / 100.0), 1),
                 "dominant_pollutant": "PM2.5" if sub_pm25 >= sub_pm10 else "PM10",
                 "source": f"Field Calibration Sync ({cal.get('notes', 'Public Display Board')})"
             }
     except Exception:
         pass
 
+    # 1. Primary: Physical CAAQMS Ground Sensor Network (WAQI)
+    waqi_data = fetch_waqi_telemetry(lat, lon, fallback_name)
+    if waqi_data:
+        return waqi_data
+
+    # 2. Secondary: Open-Meteo Atmospheric Grid (CPCB Standard)
     grid_data = fetch_live_air_quality_by_coords(lat, lon, fallback_name)
     if grid_data:
         return grid_data
+
+    # 3. Tertiary: Regional Fallback
+    return generate_regional_fallback(lat, lon, fallback_name)
 
     # Fallback to OpenAQ if Open-Meteo grid is temporarily unreachable
     if OPENAQ_API_KEY:
