@@ -692,6 +692,258 @@ with tab4:
 
     st.markdown("---")
 
+    # -------------------------------------------------------------
+    # HEALTH ADVICE & CIGARETTE EQUIVALENCE FOR LOCATION (IMAGE 1)
+    # -------------------------------------------------------------
+    target_city_name = st.session_state["target_name"].split(",")[0].strip()
+    st.markdown(f"### 🚬 Health Advice For People Living In **{target_city_name}**")
+    
+    city_pm25 = live_data.get('pm25', 45.0) if live_data else 45.0
+    daily_cigs_loc = max(0.1, round(city_pm25 / 22.0, 1))
+    weekly_cigs_loc = round(daily_cigs_loc * 7.0, 1)
+    monthly_cigs_loc = round(daily_cigs_loc * 30.0, 1)
+
+    c1_c1, c1_c2, c1_c3 = st.columns([2, 1, 1])
+    with c1_c1:
+        st.markdown(f"""
+        <div class="metric-card" style="border-left: 4px solid #FF5252; background: rgba(255, 82, 82, 0.04);">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <div style="font-size: 38px; font-weight: 900; color: #FF5252; line-height: 1.0;">
+                        {daily_cigs_loc} <span style="font-size: 14px; color: #ff8888; font-weight:700;">Cigarettes / day</span>
+                    </div>
+                </div>
+                <div style="font-size: 36px;">🚬</div>
+            </div>
+            <div style="font-size: 13px; color: #ddd; margin-top: 10px; font-weight: 600;">
+                Breathing the ambient air in <b>{target_city_name}</b> is as harmful as smoking <b>{daily_cigs_loc}</b> cigarettes a day.
+            </div>
+            <div style="font-size: 11px; color: #888; margin-top: 6px;">
+                Source: <i>Berkeley Earth particulate health exposure model (22 µg/m³ PM2.5 ≈ 1 cigarette)</i>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    with c1_c2:
+        st.markdown(f"""
+        <div class="metric-card" style="text-align: center; border-left: 4px solid #FFC000;">
+            <div style="font-size: 11px; color: #aaa; font-weight: 700; text-transform: uppercase;">Weekly Exposure</div>
+            <div style="font-size: 26px; font-weight: 800; color: #FFC000; margin-top: 4px;">{weekly_cigs_loc}</div>
+            <div style="font-size: 12px; color: #bbb;">Cigarettes / Week</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with c1_c3:
+        st.markdown(f"""
+        <div class="metric-card" style="text-align: center; border-left: 4px solid #FF7C80;">
+            <div style="font-size: 11px; color: #aaa; font-weight: 700; text-transform: uppercase;">Monthly Exposure</div>
+            <div style="font-size: 26px; font-weight: 800; color: #FF7C80; margin-top: 4px;">{monthly_cigs_loc}</div>
+            <div style="font-size: 12px; color: #bbb;">Cigarettes / Month</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("#### 🛡️ Solutions for Current AQI")
+    
+    if aqi_val > 200:
+        ap_status, cf_status, n95_status, si_status = "MUST", "MUST", "MUST", "MUST"
+    elif aqi_val > 100:
+        ap_status, cf_status, n95_status, si_status = "Recommended", "MUST", "MUST", "Recommended"
+    else:
+        ap_status, cf_status, n95_status, si_status = "Optional", "Recommended", "Recommended", "Optional"
+
+    sol_choice = st.radio(
+        "Select Solution for Action Plan:",
+        ["Air Purifier", "Car Cabin Filter", "N95 Mask", "Stay Indoors"],
+        horizontal=True,
+        key="tab4_solution_radio"
+    )
+
+    if sol_choice == "Air Purifier":
+        sol_desc = f"As per current AQI level of <b>{aqi_val}</b> ({cat_name}) in {target_city_name}, keep indoor air purifiers equipped with True HEPA filters turned ON in active bedrooms and living spaces."
+        sol_badge = f"<span style='background:#00D2FF22; color:#00D2FF; border:1px solid #00D2FF; padding:3px 10px; border-radius:12px; font-weight:700; font-size:12px;'>{ap_status}</span>"
+    elif sol_choice == "Car Cabin Filter":
+        sol_desc = f"As per current AQI level of <b>{aqi_val}</b> in {target_city_name}, drivers and commuters must use car cabin filters (HEPA/Activated Carbon) inside their vehicle and keep air ventilation in Recirculation mode."
+        sol_badge = f"<span style='background:#FFC00022; color:#FFC000; border:1px solid #FFC000; padding:3px 10px; border-radius:12px; font-weight:700; font-size:12px;'>{cf_status}</span>"
+    elif sol_choice == "N95 Mask":
+        sol_desc = f"As per current pollution levels in {target_city_name}, certified N95 or FFP2 masks are required for outdoor travel or open-cabin commuting. Cloth masks filter less than 15% of fine PM2.5."
+        sol_badge = f"<span style='background:#FF525222; color:#FF5252; border:1px solid #FF5252; padding:3px 10px; border-radius:12px; font-weight:700; font-size:12px;'>{n95_status}</span>"
+    else:
+        sol_desc = f"With AQI at <b>{aqi_val}</b> in {target_city_name}, sensitive individuals (children, elderly, asthma patients) must limit outdoor morning walks and avoid strenuous outdoor exercise near high-traffic corridors."
+        sol_badge = f"<span style='background:#00B05022; color:#00B050; border:1px solid #00B050; padding:3px 10px; border-radius:12px; font-weight:700; font-size:12px;'>{si_status}</span>"
+
+    st.markdown(f"""
+    <div class="metric-card" style="border-left: 4px solid #00D2FF; background: rgba(0, 210, 255, 0.03); margin-top: 6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-size:15px; font-weight:800; color:#fff;">{sol_choice} Action Directive</div>
+            <div>{sol_badge}</div>
+        </div>
+        <div style="font-size:13px; color:#ddd; margin-top:8px; line-height:1.5;">
+            {sol_desc}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # -------------------------------------------------------------
+    # PREVENT HEALTH PROBLEMS: UNDERSTAND YOUR RISKS (IMAGES 2 & 3)
+    # -------------------------------------------------------------
+    st.markdown(f"### 🫀 Prevent Health Problems: Understand Your Risks in **{target_city_name}**")
+    st.caption("Precautionary medical suggestions & tailored risk mitigation plans based on live ambient AQI")
+
+    cond_choice = st.radio(
+        "Select Health Condition:",
+        ["🫁 Asthma", "🫀 Heart Issues", "🧏 Allergies", "👃 Sinus", "🤒 Cold / Flu", "🫁 Chronic (COPD)"],
+        horizontal=True,
+        key="tab4_condition_radio"
+    )
+
+    if aqi_val <= 50:
+        risk_level = "Low"
+        risk_badge_bg = "#00B05022"
+        risk_badge_border = "#00B050"
+        risk_badge_text = "#00B050"
+        risk_label = "Low Risk of Symptoms"
+    elif aqi_val <= 150:
+        risk_level = "Mild"
+        risk_badge_bg = "#FFC00022"
+        risk_badge_border = "#FFC000"
+        risk_badge_text = "#FFC000"
+        risk_label = f"Mild Chances of Symptoms"
+    elif aqi_val <= 250:
+        risk_level = "Moderate"
+        risk_badge_bg = "#FF990022"
+        risk_badge_border = "#FF9900"
+        risk_badge_text = "#FF9900"
+        risk_label = f"Moderate Risk of Symptoms"
+    elif aqi_val <= 350:
+        risk_level = "High"
+        risk_badge_bg = "#FF525222"
+        risk_badge_border = "#FF5252"
+        risk_badge_text = "#FF5252"
+        risk_label = f"High Risk of Symptoms"
+    else:
+        risk_level = "Severe"
+        risk_badge_bg = "#C0000044"
+        risk_badge_border = "#C00000"
+        risk_badge_text = "#FF7C80"
+        risk_label = f"Severe Risk of Complications"
+
+    cond_data = {
+        "🫁 Asthma": {
+            "title": "Asthma",
+            "symptoms": "Moderate symptoms including frequent wheezing, noticeable shortness of breath, chest tightness, and persistent cough.",
+            "dos": [
+                "Limit outdoor activities when AQI is poor.",
+                "Clean indoor air with an air purifier to reduce exposure.",
+                "Soothe the respiratory tract with herbal teas or warm water to help alleviate symptoms.",
+                "Keep prescribed rescue inhalers readily accessible."
+            ],
+            "donts": [
+                "Exercise outdoors without a mask.",
+                "Stay in smoky areas with strong fumes."
+            ]
+        },
+        "🫀 Heart Issues": {
+            "title": "Heart Issues",
+            "symptoms": "Moderate symptoms like noticeable heart palpitations, increased fatigue, more frequent shortness of breath etc.",
+            "dos": [
+                "Limit time spent outdoors, especially during periods of high pollution.",
+                "Use air purifiers to maintain good indoor air quality, particularly in bedrooms.",
+                "Follow a heart-healthy diet low in sodium, saturated fats etc.",
+                "Monitor blood pressure and heart rate regularly."
+            ],
+            "donts": [
+                "Skip prescribed medications or make changes to your medication.",
+                "Ignore signs of discomfort, like chest pain or dizziness.",
+                "Drink alcohol in excess."
+            ]
+        },
+        "🧏 Allergies": {
+            "title": "Allergies & Respiratory Sensitivity",
+            "symptoms": "Frequent sneezing, watery or itchy eyes, nasal drip, and throat irritation triggered by airborne particulates.",
+            "dos": [
+                "Wear protective eyewear and N95 masks when stepping outdoors.",
+                "Wash face and rinse eyes with fresh water after returning from outdoors.",
+                "Keep windows closed during high dust and pollen hours."
+            ],
+            "donts": [
+                "Rub itchy eyes with unwashed hands.",
+                "Dry clothes outside during heavy smog alert days."
+            ]
+        },
+        "👃 Sinus": {
+            "title": "Sinus & Nasal Congestion",
+            "symptoms": "Facial pressure around eyes and forehead, heavy nasal congestion, sinus headaches, and post-nasal drip.",
+            "dos": [
+                "Perform daily saline nasal rinses to clear particulate deposits.",
+                "Drink plenty of warm fluids to keep nasal passages hydrated.",
+                "Use steam humidifiers indoors during dry, polluted periods."
+            ],
+            "donts": [
+                "Expose sinuses to sudden cold air conditioning blast after hot traffic commute.",
+                "Ignore severe sinus pressure that lasts over a week."
+            ]
+        },
+        "🤒 Cold / Flu": {
+            "title": "Cold & Flu Vulnerability",
+            "symptoms": "Scratchy sore throat, low-grade fever, muscle aches, persistent cough, and nasal congestion.",
+            "dos": [
+                "Wear masks in crowded public transport to avoid viral cross-infection.",
+                "Drink warm herbal infusions (ginger, turmeric, holy basil).",
+                "Maintain 7-8 hours of sleep to support immune defense against polluted air."
+            ],
+            "donts": [
+                "Mistake severe particulate airway inflammation for a simple common cold.",
+                "Self-administer antibiotics without medical prescription."
+            ]
+        },
+        "🫁 Chronic (COPD)": {
+            "title": "Chronic Obstructive Pulmonary Disease (COPD)",
+            "symptoms": "Chronic productive cough, shortness of breath during routine daily movements, and severe bronchial inflammation.",
+            "dos": [
+                "Remain strictly indoors in air-purified rooms during high AQI alerts.",
+                "Monitor blood oxygen saturation (SpO2) with a pulse oximeter.",
+                "Have emergency pulmonologist contact details readily available."
+            ],
+            "donts": [
+                "Go outside without N95 mask protection during peak morning pollution hours.",
+                "Ignore sudden drops in oxygen saturation below 92%."
+            ]
+        }
+    }
+
+    info = cond_data[cond_choice]
+
+    c_left, c_right = st.columns([1, 1.8])
+    with c_left:
+        st.markdown(f"""
+        <div class="metric-card" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); text-align: center; padding: 25px 15px; border-radius: 12px;">
+            <div style="font-size: 52px; margin-bottom: 8px;">{cond_choice.split()[0]}</div>
+            <div style="font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 12px;">{info['title']}</div>
+            <div style="background: {risk_badge_bg}; color: {risk_badge_text}; border: 1px solid {risk_badge_border}; padding: 6px 14px; border-radius: 18px; font-weight: 700; font-size: 13px; display: inline-block;">
+                ● {risk_label}
+            </div>
+            <div style="font-size: 12px; color: #aaa; margin-top: 14px;">
+                Risk of <b>{info['title']}</b> symptoms is <b>{risk_level}</b> when AQI is <b>{cat_name} ({aqi_val})</b>.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c_right:
+        st.markdown(f"#### **{info['title']}**")
+        st.markdown(f"<div style='font-size:13px; color:#ddd; margin-bottom:10px;'>Risk of <b>{info['title']}</b> symptoms is <b>{risk_level}</b> when AQI is <b>{cat_name} ({aqi_val})</b> &nbsp;—&nbsp; <span style='color:#bbb;'>{info['symptoms']}</span></div>", unsafe_allow_html=True)
+        
+        d_col1, d_col2 = st.columns(2)
+        with d_col1:
+            st.markdown("<div style='font-size:14px; font-weight:800; color:#00B050; margin-bottom:6px;'>Do's :</div>", unsafe_allow_html=True)
+            for do_item in info["dos"]:
+                st.markdown(f"<div style='font-size:12.5px; color:#ccc; margin-bottom:5px;'>✓ {do_item}</div>", unsafe_allow_html=True)
+        with d_col2:
+            st.markdown("<div style='font-size:14px; font-weight:800; color:#FF5252; margin-bottom:6px;'>Don'ts :</div>", unsafe_allow_html=True)
+            for dont_item in info["donts"]:
+                st.markdown(f"<div style='font-size:12.5px; color:#ccc; margin-bottom:5px;'>❌ {dont_item}</div>", unsafe_allow_html=True)
+
+    st.markdown("---")
+
     with st.expander("📸 Visual Field Audit & Survey Records (University of Mumbai CEP)"):
         ev_dir = os.path.join(CURRENT_DIR, "field_evidence")
         ev_files = [f for f in os.listdir(ev_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))] if os.path.exists(ev_dir) else []
