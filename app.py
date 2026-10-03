@@ -368,6 +368,44 @@ with tab1:
     st.markdown("#### 🎯 CPCB National Air Quality Index (NAQI) Scale Position")
     render_cpcb_scale_bar(aqi_val)
 
+    # Fetch 24-Hour Diurnal Trend Curve first to calculate dynamic optimal activity window
+    df_hourly = fetch_hourly_trend(st.session_state["target_lat"], st.session_state["target_lon"])
+
+    # Calculate dynamic 3-hour minimum AQI window
+    opt_start_fmt = "1:00 PM"
+    opt_end_fmt = "4:00 PM"
+    opt_avg_aqi = 65
+    if not df_hourly.empty and len(df_hourly) >= 3:
+        window_size = 3
+        min_avg = float('inf')
+        best_idx = 0
+        for i in range(len(df_hourly) - window_size + 1):
+            win_avg = df_hourly['Hourly_AQI'].iloc[i:i+window_size].mean()
+            if win_avg < min_avg:
+                min_avg = win_avg
+                best_idx = i
+        
+        def format_hour_str(t_str):
+            try:
+                h = int(str(t_str).split(':')[0])
+                if h == 0:
+                    return "12:00 AM"
+                elif h < 12:
+                    return f"{h}:00 AM"
+                elif h == 12:
+                    return "12:00 PM"
+                else:
+                    return f"{h-12}:00 PM"
+            except Exception:
+                return str(t_str)
+
+        start_t = df_hourly['Time'].iloc[best_idx]
+        start_h = int(str(start_t).split(':')[0])
+        end_h = (start_h + 3) % 24
+        opt_start_fmt = format_hour_str(start_t)
+        opt_end_fmt = format_hour_str(f"{end_h:02d}:00")
+        opt_avg_aqi = int(round(min_avg))
+
     # Citizen Quick Action Bar
     pub_c1, pub_c2 = st.columns(2)
     with pub_c1:
@@ -383,21 +421,26 @@ with tab1:
             status_html = "<div class='metric-card' style='border-left: 5px solid #7030A0;'><b>🟣 OUTDOOR SAFETY STATUS: SEVERE / STAY INDOORS</b><p style='font-size:12.5px; color:#aaa; margin-top:4px;'>Severe health hazard. Avoid all non-essential outdoor travel and run indoor air purifiers.</p></div>"
         st.markdown(status_html, unsafe_allow_html=True)
     with pub_c2:
-        st.markdown("""
+        st.markdown(f"""
         <div class="metric-card" style="border-left: 5px solid #00D2FF;">
             <b>☀️ OPTIMAL OUTDOOR ACTIVITY WINDOW TODAY</b>
-            <p style="font-size:12.5px; color:#aaa; margin-top:4px;"><b>1:00 PM – 4:00 PM:</b> Maximum solar heating and atmospheric mixing layer height break morning inversions, providing the cleanest air window for outdoor errands and exercise.</p>
+            <p style="font-size:12.5px; color:#aaa; margin-top:4px;"><b>{opt_start_fmt} – {opt_end_fmt}:</b> Forecasted daily pollution trough (Lowest Avg AQI ~<b>{opt_avg_aqi}</b>). Best window for outdoor errands, exercise, and school activities based on diurnal dispersion trajectory.</p>
         </div>
         """, unsafe_allow_html=True)
 
     # 24-Hour Diurnal Trend Curve
-    st.markdown("#### 🕒 24-Hour Diurnal AQI Pattern (Morning Smog vs. Afternoon Dispersion)")
-    df_hourly = fetch_hourly_trend(st.session_state["target_lat"], st.session_state["target_lon"])
+    st.markdown("#### 🕒 24-Hour Diurnal AQI Trajectory (Morning Smog vs. Afternoon Dispersion)")
     if not df_hourly.empty:
-        fig_hourly = px.line(df_hourly, x="Time", y="Hourly_AQI", markers=True, title=f"24-Hour Atmospheric Trajectory ({st.session_state['target_name']})")
+        fig_hourly = px.line(
+            df_hourly,
+            x="Time",
+            y="Hourly_AQI",
+            markers=True,
+            title=f"24-Hour Forecasted Hourly AQI ({st.session_state['target_name']}) — Lower = Cleaner Air"
+        )
         fig_hourly.update_traces(line_color="#00D2FF", marker=dict(size=6, color="#00D2FF"))
         fig_hourly.update_layout(
-            yaxis=dict(title="AQI", range=[max(0, df_hourly['Hourly_AQI'].min() - 15), df_hourly['Hourly_AQI'].max() + 20]),
+            yaxis=dict(title="Forecasted Hourly AQI (Lower = Cleaner Air)", range=[max(0, df_hourly['Hourly_AQI'].min() - 15), df_hourly['Hourly_AQI'].max() + 20]),
             xaxis=dict(title="Hour of Day"),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
@@ -405,6 +448,7 @@ with tab1:
             margin=dict(l=20, r=20, t=35, b=20)
         )
         st.plotly_chart(fig_hourly, use_container_width=True, config={"displayModeBar": False, "responsive": True})
+        st.caption(f"💡 **Data Alignment Note:** Lower numeric values indicate cleaner air. The optimal outdoor activity window (**{opt_start_fmt} – {opt_end_fmt}**) dynamically highlights the 3-hour minimum pollution trough from the curve above.")
 
     st.markdown("### 🫁 Vulnerable Groups & Pediatric Action Strip")
     vg1, vg2, vg3 = st.columns(3)

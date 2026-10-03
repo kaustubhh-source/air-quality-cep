@@ -576,9 +576,10 @@ def fetch_hourly_trend(lat: float, lon: float):
         pass
     
     # Synthetic fallback diurnal pattern if API offline
+    # Urban CAAQMS diurnal cycle: morning inversion peak (8 AM), afternoon solar dispersion trough (2-4 PM), evening traffic peak (8 PM)
     hours = [f"{h:02d}:00" for h in range(24)]
-    base_aqi = 75
-    synthetic = [int(base_aqi + 40 * np.sin((h - 7) * np.pi / 12) ** 2) for h in range(24)]
+    base_aqi = 65
+    synthetic = [int(base_aqi + 45 * (0.5 + 0.5 * np.cos((h - 8) * np.pi / 6))) for h in range(24)]
     return pd.DataFrame({
         "Time": hours,
         "Hourly_AQI": synthetic,
