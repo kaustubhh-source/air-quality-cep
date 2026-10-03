@@ -246,6 +246,40 @@ def render_pollutant_card(name: str, full_name: str, val: float, unit: str, safe
     </div>
     """, unsafe_allow_html=True)
 
+def render_major_pollutant_tile(title: str, sub_title: str, val: float, unit: str, safe_limit: float, icon_str: str):
+    ratio = val / safe_limit if safe_limit > 0 else 0
+    if ratio <= 0.6:
+        bar_color = "#00B050"
+    elif ratio <= 1.0:
+        bar_color = "#92D050"
+    elif ratio <= 1.5:
+        bar_color = "#FFC000"
+    elif ratio <= 2.5:
+        bar_color = "#FF7C80"
+    else:
+        bar_color = "#C00000"
+
+    val_str = f"{int(round(val))}" if val >= 1 else f"{val:.1f}"
+
+    return f"""
+    <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-left: 5px solid {bar_color}; border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="font-size: 24px; opacity: 0.85;">{icon_str}</div>
+            <div>
+                <div style="font-size: 13px; font-weight: 700; color: #ffffff;">{title}</div>
+                <div style="font-size: 11px; color: #888888; font-weight: 600;">({sub_title})</div>
+            </div>
+        </div>
+        <div style="text-align: right; display: flex; align-items: center; gap: 10px;">
+            <div>
+                <div style="font-size: 24px; font-weight: 900; color: #ffffff; line-height: 1.0;">{val_str}</div>
+                <div style="font-size: 11px; color: #aaaaaa; font-weight: 600;">{unit}</div>
+            </div>
+            <div style="font-size: 14px; color: #666666; font-weight: 700;">❯</div>
+        </div>
+    </div>
+    """
+
 # -------------------------------------------------------------
 # 4. EMERGENCY CIVIC BROADCAST STRIP
 # -------------------------------------------------------------
@@ -356,6 +390,34 @@ with tab1:
 
     st.markdown("#### 🎯 CPCB National Air Quality Index (NAQI) Scale Position")
     render_cpcb_scale_bar(aqi_val)
+
+    st.markdown("---")
+    target_city_name = st.session_state["target_name"].split(",")[0].strip()
+    st.markdown(f"#### 💨 Major Air Pollutants in **{target_city_name}**")
+    
+    pol_c1, pol_c2, pol_c3 = st.columns(3)
+    
+    val_pm25 = live_data.get('pm25', 33.0) if live_data else 33.0
+    val_pm10 = live_data.get('pm10', 39.0) if live_data else 39.0
+    co_raw = live_data.get('co', 0.88) if live_data else 0.88
+    val_co = int(co_raw * 250) if co_raw < 10 else int(co_raw)
+    val_so2 = live_data.get('so2', 2.0) if live_data else 2.0
+    val_no2 = live_data.get('no2', 5.0) if live_data else 5.0
+    val_o3  = live_data.get('o3', 24.0) if live_data else 24.0
+
+    with pol_c1:
+        st.markdown(render_major_pollutant_tile("Particulate Matter", "PM2.5", val_pm25, "µg/m³", 60.0, "🌫️"), unsafe_allow_html=True)
+        st.markdown(render_major_pollutant_tile("Sulfur Dioxide", "SO2", val_so2, "ppb", 40.0, "💨"), unsafe_allow_html=True)
+
+    with pol_c2:
+        st.markdown(render_major_pollutant_tile("Particulate Matter", "PM10", val_pm10, "µg/m³", 100.0, "🏭"), unsafe_allow_html=True)
+        st.markdown(render_major_pollutant_tile("Nitrogen Dioxide", "NO2", val_no2, "ppb", 40.0, "🚘"), unsafe_allow_html=True)
+
+    with pol_c3:
+        st.markdown(render_major_pollutant_tile("Carbon Monoxide", "CO", val_co, "ppb", 400.0, "☁️"), unsafe_allow_html=True)
+        st.markdown(render_major_pollutant_tile("Ozone", "O3", val_o3, "ppb", 50.0, "☀️"), unsafe_allow_html=True)
+
+    st.markdown("---")
 
     # Fetch 24-Hour Diurnal Trend Curve first to calculate dynamic safe window
     df_hourly = fetch_hourly_trend(st.session_state["target_lat"], st.session_state["target_lon"])

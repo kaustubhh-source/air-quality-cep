@@ -545,7 +545,7 @@ def reverse_geocode(lat: float, lon: float):
 
 def fetch_live_air_quality_by_coords(lat: float, lon: float, location_name: str = ""):
     """Atmospheric telemetry via Open-Meteo with CPCB subindex interpolation and ground anchoring"""
-    url = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat}&longitude={lon}&current=pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,us_aqi&timezone=Asia%2FKolkata"
+    url = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat}&longitude={lon}&current=pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone,us_aqi&timezone=Asia%2FKolkata"
     try:
         r = requests.get(url, headers=HEADERS, timeout=6)
         if r.status_code == 200:
@@ -562,6 +562,7 @@ def fetch_live_air_quality_by_coords(lat: float, lon: float, location_name: str 
             so2 = float(cur.get("sulphur_dioxide", 6.0))
             co_ug = float(cur.get("carbon_monoxide", 800.0))
             co_mg = co_ug / 1000.0 if co_ug > 20 else co_ug
+            o3 = float(cur.get("ozone", 24.0))
             us_aqi = int(cur.get("us_aqi", 0))
 
             sub_p25 = calculate_cpcb_subindex_pm25(p25)
@@ -569,13 +570,15 @@ def fetch_live_air_quality_by_coords(lat: float, lon: float, location_name: str 
             sub_no2 = calculate_cpcb_subindex_no2(no2)
             sub_so2 = calculate_cpcb_subindex_so2(so2)
             sub_co  = calculate_cpcb_subindex_co(co_mg)
+            sub_o3  = calculate_cpcb_subindex_o3(o3)
 
             sub_map = {
                 "PM2.5": sub_p25,
                 "PM10": sub_p10,
                 "NO₂": sub_no2,
                 "SO₂": sub_so2,
-                "CO": sub_co
+                "CO": sub_co,
+                "O₃": sub_o3
             }
 
             dominant_pol = max(sub_map, key=sub_map.get)
@@ -593,6 +596,7 @@ def fetch_live_air_quality_by_coords(lat: float, lon: float, location_name: str 
                 "no2": round(no2, 1),
                 "so2": round(so2, 1),
                 "co": round(co_mg, 2),
+                "o3": round(o3, 1),
                 "subindexes": sub_map,
                 "dominant_pollutant": dominant_pol if calc_aqi >= us_aqi else "PM2.5",
                 "source": "Open-Meteo Atmospheric Grid (CPCB Standard)"
