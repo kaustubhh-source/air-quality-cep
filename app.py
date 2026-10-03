@@ -840,64 +840,6 @@ with tab3:
 # TAB 4: OCCUPATIONAL EXPOSURE & CIVIC EVIDENCE HUB
 # =============================================================
 with tab4:
-    st.markdown("### 🧮 Interactive Shift Exposure & N95 Protection Calculator")
-    st.caption("Empirical occupational intake model based on vehicle cabin type, shift hours, and mask filtration efficiency")
-
-    calc_c1, calc_c2 = st.columns([1.2, 1])
-
-    with calc_c1:
-        veh_type = st.selectbox(
-            "Commute / Vehicle Cabin Type",
-            ["Open Auto-Rickshaw (3.4x Traffic PM Exposure)", "Two-Wheeler Delivery (2.8x Exhaust PM Exposure)", "Closed AC Car (0.4x Filtered Cabin Exposure)"]
-        )
-        shift_hours = st.slider("Daily Shift / Roadside Duration (Hours)", min_value=2, max_value=12, value=8, step=1)
-        mask_type = st.selectbox(
-            "Mask / Facial Protection Equipment",
-            ["None (0% Filtration)", "Handkerchief / Cloth Mask (15% Filtration)", "Certified N95 / FFP2 Mask (95% Filtration)"]
-        )
-
-        if "Auto-Rickshaw" in veh_type:
-            veh_mult = 3.4
-        elif "Two-Wheeler" in veh_type:
-            veh_mult = 2.8
-        else:
-            veh_mult = 0.4
-
-        if "Cloth" in mask_type:
-            mask_eff = 0.15
-        elif "N95" in mask_type:
-            mask_eff = 0.95
-        else:
-            mask_eff = 0.0
-
-        base_pm25 = live_data.get('pm25', 45.0) if live_data else 45.0
-        effective_pm25 = base_pm25 * veh_mult * (1.0 - mask_eff)
-        
-        # Total Inhaled Mass (breathing volume ~ 0.85 m3/hr during light exertion)
-        total_inhaled_mass = effective_pm25 * 0.85 * shift_hours
-        
-        # Cigarette Equivalence (1 cigarette ~ 22 ug/m3 24h exposure or ~ 440 ug inhaled PM2.5 mass)
-        cigs_equivalent = round(total_inhaled_mass / 440.0, 1)
-
-    with calc_c2:
-        st.markdown(f"""
-        <div class="metric-card" style="border: 2px solid #00D2FF; background: rgba(0, 210, 255, 0.04); text-align: center; padding: 20px;">
-            <div style="font-size: 12px; color: #aaa; text-transform: uppercase; font-weight:700;">ESTIMATED SHIFT PM2.5 INHALATION</div>
-            <div style="font-size: 44px; font-weight: 900; color: #FF7C80; margin: 6px 0;">{total_inhaled_mass:.1f} <span style="font-size:18px;">µg</span></div>
-            <div style="font-size: 18px; font-weight: 800; color: #FFC000; margin-bottom: 8px;">
-                🚬 Equivalent to <b>{cigs_equivalent}</b> Cigarettes / Shift
-            </div>
-            <div style="font-size: 11.5px; color: #bbb; line-height: 1.35; text-align: left; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 6px;">
-                • <b>Effective PM2.5 Rate:</b> {effective_pm25:.1f} µg/m³<br>
-                • <b>Breathing Volume:</b> {(0.85 * shift_hours):.1f} m³ ({shift_hours}h Shift)
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.warning("⚠️ **EMPIRICAL LESSON FROM FIELD AUDIT:** Standard cloth masks, handkerchiefs, or scarves filter less than 15% of fine combustion exhaust particulates ($PM_{2.5}$). Only certified N95 / FFP2 masks provide meaningful respiratory protection for drivers and roadside workers during 8+ hour shifts.")
-
-    st.markdown("---")
-
     # -------------------------------------------------------------
     # HEALTH ADVICE & CIGARETTE EQUIVALENCE FOR LOCATION (IMAGE 1)
     # -------------------------------------------------------------
