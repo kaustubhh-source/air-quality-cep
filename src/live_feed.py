@@ -570,20 +570,18 @@ def fetch_live_air_quality_by_coords(lat: float, lon: float, location_name: str 
             sub_no2 = calculate_cpcb_subindex_no2(no2)
             sub_so2 = calculate_cpcb_subindex_so2(so2)
             sub_co  = calculate_cpcb_subindex_co(co_mg)
-            sub_o3  = calculate_cpcb_subindex_o3(o3)
 
             sub_map = {
                 "PM2.5": sub_p25,
                 "PM10": sub_p10,
-                "NO₂": sub_no2,
-                "SO₂": sub_so2,
-                "CO": sub_co,
-                "O₃": sub_o3
+                "NO2": sub_no2,
+                "SO2": sub_so2,
+                "CO": sub_co
             }
 
-            dominant_pol = max(sub_map, key=sub_map.get)
-            calc_aqi = sub_map[dominant_pol]
-            cpcb_aqi = max(calc_aqi, us_aqi)
+            # CPCB official composite AQI is anchored to particulate sub-indices (PM2.5 & PM10)
+            cpcb_aqi = max(sub_p25, sub_p10)
+            dominant_pol = "PM2.5" if sub_p25 >= sub_p10 else "PM10"
             
             return {
                 "location": location_name,
@@ -598,7 +596,7 @@ def fetch_live_air_quality_by_coords(lat: float, lon: float, location_name: str 
                 "co": round(co_mg, 2),
                 "o3": round(o3, 1),
                 "subindexes": sub_map,
-                "dominant_pollutant": dominant_pol if calc_aqi >= us_aqi else "PM2.5",
+                "dominant_pollutant": dominant_pol,
                 "source": "Open-Meteo Atmospheric Grid (CPCB Standard)"
             }
     except Exception:
