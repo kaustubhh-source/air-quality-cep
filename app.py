@@ -347,23 +347,21 @@ admin_url_trigger = (
 show_admin_tab = admin_url_trigger or st.session_state.get("admin_authenticated", False)
 
 if show_admin_tab:
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-        "📍 Live Pulse & Daily Planner",
-        "📈 7-Day ML Forecast & XAI",
-        "🗺️ Pan-India Live Map & Hotspots",
-        "📢 Occupational Exposure & Civic Hub",
-        "🤝 Community Handover Kit",
-        "🛡️ Admin Command Center"
-    ])
-else:
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "📍 Live Pulse & Daily Planner",
         "📈 7-Day ML Forecast & XAI",
         "🗺️ Pan-India Live Map & Hotspots",
         "📢 Occupational Exposure & Civic Hub",
-        "🤝 Community Handover Kit"
+        "🛡️ Admin Command Center"
     ])
-    tab6 = None
+else:
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "📍 Live Pulse & Daily Planner",
+        "📈 7-Day ML Forecast & XAI",
+        "🗺️ Pan-India Live Map & Hotspots",
+        "📢 Occupational Exposure & Civic Hub"
+    ])
+    tab5 = None
 
 # =============================================================
 # TAB 1: LIVE PULSE & DAILY PLANNER
@@ -1212,256 +1210,7 @@ with tab4:
                 st.success(f"Observation registered! Role: {occ_role} | Symptom: {symp} ({sev}) logged to civic database.")
 
 # =============================================================
-# TAB 5: COMMUNITY HANDOVER & OPERATIONAL ADOPTION KIT (NEP 2020 CEP)
-# =============================================================
-with tab5:
-    st.markdown("### 🤝 Community Handover & Operational Adoption Kit")
-    st.caption("Official NEP 2020 Community Engagement Project (CEP) Transfer Protocol, MOU Certificate Generator, Printable Bulletins & Volunteer Guide")
-
-    hk_sub1, hk_sub2, hk_sub3, hk_sub4 = st.tabs([
-        "📜 Handover MOU & Certificate",
-        "🖨️ Printable Noticeboard Bulletin",
-        "📖 Volunteer Operator Guide",
-        "📊 CEP Impact Metrics Report"
-    ])
-
-    with hk_sub1:
-        st.markdown("#### 📜 Project Handover Certificate & MOU Generator")
-        st.info("Fill out the details below to generate an official Handover Certificate & MOU transferring the PRAVAAH platform to your designated community recipient.")
-
-        with st.form("handover_form"):
-            ho_c1, ho_c2 = st.columns(2)
-            with ho_c1:
-                student_name = st.text_input("Student Author Name", value="Kaustubh (CEP Student Lead)")
-                inst_name = st.text_input("Academic Institution", value="University of Mumbai (CEP NEP 2020)")
-                ho_date = st.date_input("Handover Date", value=datetime.now())
-            with ho_c2:
-                recipient_org = st.selectbox(
-                    "Recipient Community Organization",
-                    [
-                        "College NSS Unit & Student Environmental Cell",
-                        "Chembur & MMR Auto-Rickshawmen Driver Union",
-                        "Traffic Police Division & Warden Cell",
-                        "Resident Welfare Association (RWA) & Ward Office",
-                        "Local Community Health Clinic / NGO"
-                    ]
-                )
-                custodian_name = st.text_input("Designated Community Custodian", value="Prof. / Mr. Representative")
-                contact_email = st.text_input("Recipient Contact Email / Phone", value="nss.cell@mu.ac.in")
-
-            gen_cert = st.form_submit_button("📜 Generate Official Handover Certificate & MOU", use_container_width=True)
-
-        cert_date_str = ho_date.strftime('%B %d, %Y')
-        st.markdown(f"""
-        <div style="background: rgba(15, 23, 42, 0.95); border: 2px solid #00D2FF; border-radius: 16px; padding: 30px; margin-top: 15px; box-shadow: 0 8px 32px rgba(0, 210, 255, 0.15);">
-            <div style="text-align: center; border-bottom: 2px dashed rgba(255,255,255,0.2); padding-bottom: 15px; margin-bottom: 20px;">
-                <div style="font-size: 13px; font-weight: 800; color: #00D2FF; letter-spacing: 2px;">UNIVERSITY OF MUMBAI — UNDER-GRADUATE CEP (NEP 2020)</div>
-                <div style="font-size: 24px; font-weight: 900; color: #ffffff; margin: 6px 0;">OFFICIAL PROJECT HANDOVER & ADOPTION CERTIFICATE</div>
-                <div style="font-size: 13px; color: #94A3B8;">PRAVAAH: Indian Air Quality & Civic Intelligence Platform</div>
-            </div>
-            
-            <div style="font-size: 14px; color: #E2E8F0; line-height: 1.8;">
-                This document certifies that the <b>PRAVAAH Air Quality & Civic Intelligence System</b>, developed under the <b>University of Mumbai Under-Graduate Community Engagement Project (CEP)</b> guidelines aligned with <b>NEP 2020</b>, is hereby officially handed over for community adoption and operational deployment to:
-                <br><br>
-                <div style="background: rgba(0,210,255,0.08); border-left: 4px solid #00D2FF; padding: 12px 18px; border-radius: 6px; margin: 10px 0;">
-                    🏛️ <b>Recipient Organization:</b> {recipient_org}<br>
-                    👤 <b>Designated Custodian:</b> {custodian_name} ({contact_email})<br>
-                    📅 <b>Handover Date:</b> {cert_date_str}<br>
-                    👨‍🎓 <b>Student Author Lead:</b> {student_name} ({inst_name})<br>
-                    🔗 <b>Open-Source Repository:</b> <a href="https://github.com/kaustubhh-source/air-quality-cep" target="_blank" style="color: #38BDF8;">kaustubhh-source/air-quality-cep</a>
-                </div>
-                <br>
-                <b>Key Responsibilities Transferred to Recipient:</b>
-                <ol style="margin-top: 6px; padding-left: 20px;">
-                    <li>Daily monitoring of hyper-local AQI and dissemination of civic advisories to community members.</li>
-                    <li>Utilizing the 1-Click WhatsApp Advisory & Printable Bulletin Generator for public noticeboards.</li>
-                    <li>Logging community respiratory symptom observations for ongoing local health awareness.</li>
-                    <li>Managing security passcodes (Default PIN: <code>1234</code>) for emergency broadcast dispatch.</li>
-                </ol>
-            </div>
-
-            <div style="display: flex; justify-content: space-between; margin-top: 35px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.15);">
-                <div style="text-align: center; width: 45%;">
-                    <div style="border-bottom: 1px solid #94A3B8; padding-bottom: 40px; margin-bottom: 6px;"></div>
-                    <div style="font-weight: 700; color: #fff; font-size: 13px;">{student_name}</div>
-                    <div style="font-size: 11px; color: #94A3B8;">Student Author / Developer Lead</div>
-                    <div style="font-size: 10.5px; color: #64748B;">University of Mumbai CEP</div>
-                </div>
-                <div style="text-align: center; width: 45%;">
-                    <div style="border-bottom: 1px solid #94A3B8; padding-bottom: 40px; margin-bottom: 6px;"></div>
-                    <div style="font-weight: 700; color: #fff; font-size: 13px;">{custodian_name}</div>
-                    <div style="font-size: 11px; color: #94A3B8;">Designated Community Custodian</div>
-                    <div style="font-size: 10.5px; color: #64748B;">{recipient_org}</div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        mou_text = f"""# PRAVAAH PROJECT HANDOVER MEMORANDUM OF UNDERSTANDING (MOU)
-University of Mumbai Under-Graduate CEP (NEP 2020)
-
-Date: {cert_date_str}
-Project Repository: https://github.com/kaustubhh-source/air-quality-cep
-
-PARTIES:
-1. Student Author: {student_name} ({inst_name})
-2. Recipient Organization: {recipient_org} (Custodian: {custodian_name})
-
-TERMS OF HANDOVER:
-- The PRAVAAH platform source code, documentation, and database schema are transferred under the open-source MIT License.
-- The recipient organization agrees to utilize the platform for public benefit, community health risk mitigation, and non-commercial awareness.
-- Administrative credentials (Default Security PIN: 1234) are transferred to {custodian_name}.
-"""
-        st.download_button(
-            label="📥 Download Handover MOU Document (.txt)",
-            data=mou_text,
-            file_name=f"PRAVAAH_CEP_Handover_MOU_{datetime.now().strftime('%Y%m%d')}.txt",
-            mime="text/plain",
-            use_container_width=True
-        )
-
-    with hk_sub2:
-        st.markdown("#### 🖨️ Daily Community Noticeboard Bulletin Generator")
-        st.caption("A4 printable advisory poster formatted for physical noticeboards at Rickshaw stands, Traffic Police booths, and School gates.")
-
-        b_station = st.session_state["target_name"].split(",")[0].strip()
-        b_date_str = datetime.now().strftime('%d %B %Y')
-        
-        st.markdown(f"""
-        <div style="background: #ffffff; color: #1e293b; padding: 25px; border-radius: 12px; border: 3px solid #0284C7; font-family: sans-serif; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #0284C7; padding-bottom: 12px; margin-bottom: 15px;">
-                <div>
-                    <h2 style="margin:0; color: #0284C7; font-size: 24px; font-weight: 900;">🌿 PRAVAAH DAILY AIR BULLETIN</h2>
-                    <div style="font-size: 13px; color: #475569; font-weight: 700;">COMMUNITY AIR SAFETY & CIVIC HEALTH NOTICE</div>
-                </div>
-                <div style="text-align: right;">
-                    <div style="font-size: 14px; font-weight: 800; color: #0f172a;">📍 {b_station}</div>
-                    <div style="font-size: 12px; color: #64748b;">📅 {b_date_str}</div>
-                </div>
-            </div>
-
-            <div style="display: flex; gap: 15px; margin-bottom: 15px;">
-                <div style="flex: 1; background: #FEF3C7; border: 2px solid #F59E0B; border-radius: 10px; padding: 15px; text-align: center;">
-                    <div style="font-size: 12px; font-weight: 800; color: #92400E; text-transform: uppercase;">CURRENT AQI</div>
-                    <div style="font-size: 44px; font-weight: 900; color: #B45309; margin: 4px 0;">{aqi_val}</div>
-                    <div style="background: #F59E0B; color: #fff; font-size: 13px; font-weight: 800; padding: 3px 10px; border-radius: 12px; display: inline-block;">● {cat_name}</div>
-                </div>
-                <div style="flex: 2; background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 10px; padding: 15px;">
-                    <div style="font-size: 13px; font-weight: 800; color: #334155; margin-bottom: 6px;">📊 Dominant Particulates & Telemetry:</div>
-                    <div style="font-size: 12.5px; color: #475569; line-height: 1.6;">
-                        • <b>PM2.5:</b> {live_data.get('pm25', 12.1)} µg/m³ &nbsp;|&nbsp; <b>PM10:</b> {live_data.get('pm10', 24.7)} µg/m³<br>
-                        • <b>Primary Risk:</b> {clinical_adv}<br>
-                        • <b>Direct Action:</b> {action_adv}
-                    </div>
-                </div>
-            </div>
-
-            <div style="background: #EFF6FF; border-left: 5px solid #2563EB; padding: 12px 16px; border-radius: 6px; margin-bottom: 15px;">
-                <div style="font-size: 14px; font-weight: 800; color: #1E40AF; margin-bottom: 4px;">🛺 Transit Drivers & Outdoor Commuters Directive:</div>
-                <div style="font-size: 12.5px; color: #1E3A8A;">
-                    Auto-rickshaw drivers and traffic police at heavy intersections are advised to wear N95 masks during peak hours (08:00–11:00 AM & 06:00–09:00 PM). Rinse eyes with clean water after daily shifts.
-                </div>
-            </div>
-
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px stroke #E2E8F0; padding-top: 10px; font-size: 11px; color: #64748B;">
-                <div>Issued via <b>PRAVAAH Civic Portal</b> | University of Mumbai CEP (NEP 2020)</div>
-                <div>Scan QR / Visit Portal for Live Hourly Updates</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.caption("💡 **Print Tip:** Press `Ctrl + P` (or Cmd + P) in your web browser to print this bulletin directly to A4 paper for physical noticeboard posting.")
-
-    with hk_sub3:
-        st.markdown("#### 📖 Non-Technical Volunteer Operator Guide")
-        st.caption("Quick-start manual for community volunteers taking over the day-to-day operation of the PRAVAAH platform.")
-
-        g_col1, g_col2 = st.columns(2)
-        with g_col1:
-            st.markdown("""
-            <div class="metric-card" style="border-left: 4px solid #00D2FF;">
-                <h4 style="margin-top:0; color:#00D2FF;">1. Searching & Changing Locations</h4>
-                <p style="font-size:12.5px; color:#ccc;">
-                    • Use the top search bar to type any Indian city, area name, or PIN code (e.g. <i>Chembur</i>, <i>Kurla</i>, <i>400071</i>).<br>
-                    • Or click <b>📍 Auto-Detect GPS</b> to locate your current device position.
-                </p>
-            </div>
-            <div class="metric-card" style="border-left: 4px solid #00B050; margin-top:15px;">
-                <h4 style="margin-top:0; color:#00B050;">2. Broadcasting WhatsApp Health Alerts</h4>
-                <p style="font-size:12.5px; color:#ccc;">
-                    • Navigate to <b>Tab 4 (Occupational Exposure & Civic Hub)</b>.<br>
-                    • Scroll to <b>Multi-Channel Civic Advisory Broadcast</b>.<br>
-                    • Click <b>🟢 Share Advisory to WhatsApp Group</b> to send warnings directly to community WhatsApp groups.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-
-        with g_col2:
-            st.markdown("""
-            <div class="metric-card" style="border-left: 4px solid #FFC000;">
-                <h4 style="margin-top:0; color:#FFC000;">3. Dispatching Emergency Alerts</h4>
-                <p style="font-size:12.5px; color:#ccc;">
-                    • Access <b>Tab 6 (Admin Command Center)</b>.<br>
-                    • Enter default PIN <code>1234</code>.<br>
-                    • Type an emergency alert headline and click <b>Publish Live Banner</b> to broadcast a warning banner across all user sessions.
-                </p>
-            </div>
-            <div class="metric-card" style="border-left: 4px solid #FF7C80; margin-top:15px;">
-                <h4 style="margin-top:0; color:#FF7C80;">4. Exporting Monthly Symptom CSV Data</h4>
-                <p style="font-size:12.5px; color:#ccc;">
-                    • In the Admin console, view <b>Recent Citizen Symptom Submissions Registry</b>.<br>
-                    • Click <b>📥 Download Exportable Symptom Registry (CSV)</b> to save data for local health clinic records.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-
-    with hk_sub4:
-        st.markdown("#### 📊 CEP Community Impact Metrics Report")
-        st.caption("Summary statistics for presentation to university evaluators and academic mentors.")
-
-        df_symp_count = get_symptom_registry(limit=500)
-        total_logs = len(df_symp_count) if not df_symp_count.empty else 0
-        curr_cal_count = 1 if get_field_calibration(st.session_state["target_name"]) else 0
-
-        imp_c1, imp_c2, imp_c3, imp_c4 = st.columns(4)
-        with imp_c1:
-            st.metric("Total Health Observations", f"{total_logs} Logs")
-        with imp_c2:
-            st.metric("Field Survey Telemetry", "150 Drivers")
-        with imp_c3:
-            st.metric("Active Field Calibrations", f"{curr_cal_count} Active")
-        with imp_c4:
-            st.metric("Academic Evaluation R²", "0.88 Validated")
-
-        st.markdown("---")
-        st.markdown("##### 📄 Executive CEP Impact Summary")
-        impact_summary_text = f"""=============================================================
-UNIVERSITY OF MUMBAI UNDER-GRADUATE CEP (NEP 2020) IMPACT REPORT
-=============================================================
-Project Title: PRAVAAH - Indian Air Quality & Civic Intelligence Platform
-Developer: {st.session_state.get('target_name', 'Mumbai')} CEP Lead
-Handover Date: {datetime.now().strftime('%Y-%m-%d')}
-
-METRICS & COMMUNITY OUTREACH:
-1. Total Citizen Health Observations Logged: {total_logs}
-2. Empirical Field Survey Sample Size: N=150 Transit Workers (Chembur & MMR Corridors)
-3. Model Forecasting Accuracy: Random Forest / Gradient Boost (R² = 0.88, MAE = ±12.4 AQI)
-4. Active Public Integration: Multi-channel WhatsApp broadcast & A4 Printable Bulletin Generator
-
-CONCLUSION:
-The PRAVAAH platform has been successfully operationalized and handed over to the community for continuous environmental surveillance.
-"""
-        st.text_area("Impact Summary Preview", impact_summary_text, height=180)
-        st.download_button(
-            label="📥 Download Academic CEP Impact Report (.txt)",
-            data=impact_summary_text,
-            file_name=f"PRAVAAH_CEP_Impact_Report_{datetime.now().strftime('%Y%m%d')}.txt",
-            mime="text/plain",
-            use_container_width=True
-        )
-
-# =============================================================
-# TAB 6: ADMIN COMMAND CENTER (STEALTH MODE)
+# TAB 5: ADMIN COMMAND CENTER (STEALTH MODE)
 # =============================================================
 if "admin_authenticated" not in st.session_state:
     st.session_state["admin_authenticated"] = False
@@ -1470,8 +1219,8 @@ if "admin_failed_attempts" not in st.session_state:
 
 ADMIN_SECRET = os.getenv("ADMIN_PIN", "1234").strip()
 
-if tab6 is not None:
-    with tab6:
+if tab5 is not None:
+    with tab5:
         st.markdown("### 🛡️ Municipal & Institutional Command Desk")
         
         if not st.session_state["admin_authenticated"]:
