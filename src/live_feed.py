@@ -506,12 +506,53 @@ def geocode_place(query: str):
 
     return None
 
-def reverse_geocode(lat: float, lon: float):
-    # Quick match for Chembur GPS default
-    if abs(lat - 19.0522) < 0.02 and abs(lon - 72.8994) < 0.02:
-        return "Chembur, Mumbai"
+import math
 
-    # Primary: BigDataCloud Reverse Geocode API (Fast, no rate-limiting)
+def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Calculates Haversine distance in kilometers between two GPS coordinates."""
+    R = 6371.0
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat / 2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
+
+def reverse_geocode(lat: float, lon: float):
+    """Accurate reverse geocoding via Nominatim & BigDataCloud for precise street/area detection."""
+    # 1. Primary: Nominatim OpenStreetMap for precise local suburb/neighbourhood
+    url_nom = "https://nominatim.openstreetmap.org/reverse"
+    params = {"lat": lat, "lon": lon, "format": "json", "zoom": 16}
+    try:
+        res = requests.get(url_nom, params=params, headers=HEADERS, timeout=5)
+        if res.status_code == 200 and res.json():
+            data = res.json()
+            address = data.get("address", {})
+            local_name = (
+                address.get("suburb") or
+                address.get("neighbourhood") or
+                address.get("residential") or
+                address.get("quarter") or
+                address.get("subdistrict") or
+                address.get("road") or
+                address.get("city_district")
+            )
+            city_name = (
+                address.get("city") or
+                address.get("town") or
+                address.get("state_district") or
+                address.get("county") or
+                address.get("state")
+            )
+            if local_name and city_name and local_name.lower() != city_name.lower():
+                return f"{local_name}, {city_name}"
+            elif local_name:
+                return f"{local_name}, India"
+            elif city_name:
+                return f"{city_name}, India"
+    except Exception:
+        pass
+
+    # 2. Secondary: BigDataCloud Reverse Geocode Client API
     url_bdc = f"https://api.bigdatacloud.net/data/reverse-geocode-client?latitude={lat}&longitude={lon}&localityLanguage=en"
     try:
         r = requests.get(url_bdc, headers=HEADERS, timeout=5)
@@ -526,22 +567,7 @@ def reverse_geocode(lat: float, lon: float):
     except Exception:
         pass
 
-    # Secondary: Nominatim OpenStreetMap
-    url_nom = "https://nominatim.openstreetmap.org/reverse"
-    params = {"lat": lat, "lon": lon, "format": "json"}
-    try:
-        res = requests.get(url_nom, params=params, headers=HEADERS, timeout=5)
-        if res.status_code == 200:
-            data = res.json()
-            if data:
-                address = data.get("address", {})
-                suburb = address.get("suburb") or address.get("neighbourhood") or address.get("residential") or address.get("road") or address.get("subdistrict") or "Local Area"
-                city = address.get("city") or address.get("town") or address.get("state_district") or address.get("state") or "India"
-                return f"{suburb}, {city}"
-    except Exception:
-        pass
-
-    return f"Station ({lat:.2f}°N, {lon:.2f}°E)"
+    return f"Location ({lat:.3f}°N, {lon:.3f}°E)"
 
 @st.cache_data(ttl=900)
 def fetch_live_air_quality_by_coords(lat: float, lon: float, location_name: str = ""):
@@ -740,13 +766,36 @@ def fetch_live_ground_sensor(lat: float, lon: float, fallback_name: str = "Chemb
     except Exception:
         pass
 
+    # Calculate nearest physical CPCB monitoring station from pan-India network
+    nearest_station_name = fallback_name
+    nearest_station_dist_km = 0.0
+    try:
+        df_stations = fetch_pan_india_stations()
+        min_d = float("inf")
+        best_row = None
+        for _, s_row in df_stations.iterrows():
+            d_km = haversine_distance(lat, lon, s_row["Lat"], s_row["Lon"])
+            if d_km < min_d:
+                min_d = d_km
+                best_row = s_row
+        if best_row is not None:
+            nearest_station_name = f"CPCB Station — {best_row['City']}"
+            nearest_station_dist_km = round(min_d, 1)
+    except Exception:
+        pass
+
     # 1. Primary: Live CAAQMS Atmospheric Grid (CPCB Standard)
     grid_data = fetch_live_air_quality_by_coords(lat, lon, fallback_name)
     if grid_data:
+        grid_data["nearest_station_name"] = nearest_station_name
+        grid_data["nearest_station_dist_km"] = nearest_station_dist_km
         return grid_data
 
     # 2. Secondary: Regional Baseline Fallback
-    return generate_regional_fallback(lat, lon, fallback_name)
+    fb = generate_regional_fallback(lat, lon, fallback_name)
+    fb["nearest_station_name"] = nearest_station_name
+    fb["nearest_station_dist_km"] = nearest_station_dist_km
+    return fb
 
     # Fallback to OpenAQ if Open-Meteo grid is temporarily unreachable
     if OPENAQ_API_KEY:

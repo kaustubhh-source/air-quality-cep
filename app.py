@@ -287,6 +287,40 @@ active_alert = get_active_broadcast()
 if active_alert:
     st.error(f"🚨 **EMERGENCY CIVIC DIRECTIVE ({active_alert[1].upper()}):** {active_alert[0]}")
 
+def detect_user_ip_location():
+    """Fetches high-accuracy IP-based location for GPS auto-detection."""
+    try:
+        r = requests.get("https://ipapi.co/json/", timeout=4)
+        if r.status_code == 200:
+            data = r.json()
+            lat = float(data.get("latitude", 19.0522))
+            lon = float(data.get("longitude", 72.8994))
+            city = data.get("city", "")
+            region = data.get("region", "")
+            if city and region:
+                return lat, lon, f"{city}, {region}"
+            elif city:
+                return lat, lon, f"{city}, India"
+    except Exception:
+        pass
+    
+    try:
+        r = requests.get("http://ip-api.com/json/", timeout=4)
+        if r.status_code == 200:
+            data = r.json()
+            lat = float(data.get("lat", 19.0522))
+            lon = float(data.get("lon", 72.8994))
+            city = data.get("city", "")
+            region = data.get("regionName", "")
+            if city and region:
+                return lat, lon, f"{city}, {region}"
+            elif city:
+                return lat, lon, f"{city}, India"
+    except Exception:
+        pass
+
+    return 19.0522, 72.8994, "Chembur, Mumbai"
+
 # -------------------------------------------------------------
 # 5. GLOBAL HEADER & UNIVERSAL LOCATION BAR
 # -------------------------------------------------------------
@@ -301,10 +335,14 @@ with header_c2:
 search_row1, search_row2 = st.columns([1, 4])
 with search_row1:
     if st.button("📍 Auto-Detect GPS", use_container_width=True):
-        st.session_state["target_lat"] = 19.0522
-        st.session_state["target_lon"] = 72.8994
-        st.session_state["target_name"] = reverse_geocode(19.0522, 72.8994)
-        st.rerun()
+        with st.spinner("Detecting current device location..."):
+            d_lat, d_lon, ip_place = detect_user_ip_location()
+            rev_name = reverse_geocode(d_lat, d_lon)
+            target_place = rev_name if (rev_name and "Location (" not in rev_name and "Station (" not in rev_name) else ip_place
+            st.session_state["target_lat"] = d_lat
+            st.session_state["target_lon"] = d_lon
+            st.session_state["target_name"] = target_place
+            st.rerun()
 
 with search_row2:
     with st.form("search_bar_form", clear_on_submit=False):
@@ -323,9 +361,6 @@ with search_row2:
                 else:
                     st.warning(f"⚠️ Could not locate '{loc_input.strip()}'. Please try another city, landmark, or PIN code.")
 
-st.markdown(f"**Selected Station:** `{st.session_state['target_name']}` &nbsp;|&nbsp; `Coordinates: {st.session_state['target_lat']:.4f}, {st.session_state['target_lon']:.4f}`")
-st.markdown("---")
-
 # -------------------------------------------------------------
 # 6. INGEST TELEMETRY
 # -------------------------------------------------------------
@@ -334,6 +369,15 @@ with st.spinner("Synchronizing local CAAQMS telemetry..."):
 
 aqi_val = live_data["aqi"] if live_data else 63
 cat_name, cat_color, clinical_adv, action_adv = get_cpcb_category(aqi_val)
+
+nearest_station_str = ""
+if live_data and live_data.get("nearest_station_dist_km", 0.0) > 0:
+    s_name = live_data.get("nearest_station_name", "CPCB Station")
+    s_dist = live_data.get("nearest_station_dist_km", 0.0)
+    nearest_station_str = f" &nbsp;|&nbsp; 📡 **Nearest CPCB Station:** `{s_name}` ({s_dist} km away)"
+
+st.markdown(f"📍 **Selected Location:** `{st.session_state['target_name']}` &nbsp;|&nbsp; `Coordinates: {st.session_state['target_lat']:.4f}, {st.session_state['target_lon']:.4f}`{nearest_station_str}")
+st.markdown("---")
 
 # -------------------------------------------------------------
 # 7. STICKY TAB NAVIGATION (STEALTH ADMIN GATEWAY)
