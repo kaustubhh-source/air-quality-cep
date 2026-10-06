@@ -744,22 +744,38 @@ def fetch_waqi_live_ground_sensor(lat: float, lon: float, location_name: str = "
                     
                     # Extract individual pollutants
                     iaqi = data.get("iaqi", {})
-                    pm25_val = float(iaqi.get("pm25", {}).get("v", 0))
                     pm10_val = float(iaqi.get("pm10", {}).get("v", 0))
                     no2_val = float(iaqi.get("no2", {}).get("v", 0))
                     so2_val = float(iaqi.get("so2", {}).get("v", 0))
                     co_val = float(iaqi.get("co", {}).get("v", 0))
                     o3_val = float(iaqi.get("o3", {}).get("v", 0))
 
-                    # Calculate CPCB sub-indices
-                    sub_p25 = calculate_cpcb_subindex_pm25(pm25_val) if pm25_val > 0 else ground_aqi
-                    sub_p10 = calculate_cpcb_subindex_pm10(pm10_val) if pm10_val > 0 else ground_aqi
-                    sub_no2 = calculate_cpcb_subindex_no2(no2_val) if no2_val > 0 else 20
-                    sub_so2 = calculate_cpcb_subindex_so2(so2_val) if so2_val > 0 else 10
-                    sub_co  = calculate_cpcb_subindex_co(co_val) if co_val > 0 else 10
+                    # Composite physical AQI from WAQI ground station
+                    cpcb_aqi = ground_aqi
                     
-                    # Composite CPCB AQI
-                    cpcb_aqi = max(sub_p25, sub_p10, ground_aqi)
+                    # Derive realistic PM2.5 concentration (µg/m³) from AQI breakpoint formula
+                    if cpcb_aqi <= 50:
+                        calc_pm25 = (30.0 / 50.0) * cpcb_aqi
+                    elif cpcb_aqi <= 100:
+                        calc_pm25 = 30.0 + (30.0 / 50.0) * (cpcb_aqi - 50)
+                    elif cpcb_aqi <= 200:
+                        calc_pm25 = 60.0 + (30.0 / 100.0) * (cpcb_aqi - 100)
+                    elif cpcb_aqi <= 300:
+                        calc_pm25 = 90.0 + (30.0 / 100.0) * (cpcb_aqi - 200)
+                    elif cpcb_aqi <= 400:
+                        calc_pm25 = 120.0 + (130.0 / 100.0) * (cpcb_aqi - 300)
+                    else:
+                        calc_pm25 = 250.0 + (130.0 / 100.0) * (cpcb_aqi - 400)
+
+                    pm25_val = calc_pm25
+
+                    # Calculate CPCB sub-indices based on concentrations
+                    sub_p25 = cpcb_aqi
+                    sub_p10 = calculate_cpcb_subindex_pm10(pm10_val) if (pm10_val > 0 and pm10_val < 500) else cpcb_aqi
+                    sub_no2 = calculate_cpcb_subindex_no2(no2_val) if (no2_val > 0 and no2_val < 500) else 20
+                    sub_so2 = calculate_cpcb_subindex_so2(so2_val) if (so2_val > 0 and so2_val < 500) else 10
+                    sub_co  = calculate_cpcb_subindex_co(co_val) if (co_val > 0 and co_val < 50) else 10
+                    
                     dominant_pol = str(data.get("dominentpol", "pm25")).upper()
                     if dominant_pol == "PM25":
                         dominant_pol = "PM2.5"
@@ -778,7 +794,7 @@ def fetch_waqi_live_ground_sensor(lat: float, lon: float, location_name: str = "
                         "lon": lon,
                         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M IST"),
                         "aqi": cpcb_aqi,
-                        "pm25": round(pm25_val, 1) if pm25_val > 0 else round(cpcb_aqi * 0.45, 1),
+                        "pm25": round(pm25_val, 1),
                         "pm10": round(pm10_val, 1) if pm10_val > 0 else round(cpcb_aqi * 0.95, 1),
                         "no2": round(no2_val, 1) if no2_val > 0 else 15.0,
                         "so2": round(so2_val, 1) if so2_val > 0 else 6.0,
@@ -961,10 +977,10 @@ def fetch_live_ground_sensor(lat: float, lon: float, fallback_name: str = "Chemb
 
     return generate_regional_fallback(lat, lon, fallback_name)
 
-@st.cache_data(ttl=900)
-def fetch_pan_india_stations():
+def fetch_pan_india_stations(live_telemetry: dict = None):
     """
     Fetches nationwide ground monitoring stations across India.
+    Dynamically syncs live telemetry from active target location if provided.
     """
     fallback_network = [
         # North
@@ -1023,5 +1039,41 @@ def fetch_pan_india_stations():
         {"City": "Raipur (AIIMS)", "Lat": 21.2514, "Lon": 81.6296, "AQI": 91, "State": "Chhattisgarh"}
     ]
     df = pd.DataFrame(fallback_network)
-    df["Status"] = df["AQI"].apply(lambda x: "Good" if x <= 50 else "Satisfactory" if x <= 100 else "Moderate" if x <= 200 else "Poor" if x <= 300 else "Very Poor")
+
+    if live_telemetry and isinstance(live_telemetry, dict):
+        loc_name = live_telemetry.get("location", "")
+        live_aqi = int(live_telemetry.get("aqi", 0))
+        lat = float(live_telemetry.get("lat", 0.0))
+        lon = float(live_telemetry.get("lon", 0.0))
+        
+        if live_aqi > 0 and loc_name:
+            primary_city = loc_name.split(",")[0].strip()
+            matched = False
+            for idx, row in df.iterrows():
+                city_clean = row["City"].split("(")[0].strip().lower()
+                if primary_city.lower() in city_clean or city_clean in primary_city.lower():
+                    df.at[idx, "AQI"] = live_aqi
+                    matched = True
+                    break
+            
+            if not matched:
+                state_name = loc_name.split(",")[-1].strip() if "," in loc_name else "India"
+                new_row = pd.DataFrame([{
+                    "City": primary_city,
+                    "Lat": lat if lat != 0.0 else 19.0760,
+                    "Lon": lon if lon != 0.0 else 72.8777,
+                    "AQI": live_aqi,
+                    "State": state_name
+                }])
+                df = pd.concat([df, new_row], ignore_index=True)
+
+    def get_cpcb_status(x):
+        if x <= 50: return "Good"
+        elif x <= 100: return "Satisfactory"
+        elif x <= 200: return "Moderate"
+        elif x <= 300: return "Poor"
+        elif x <= 400: return "Very Poor"
+        else: return "Severe"
+
+    df["Status"] = df["AQI"].apply(get_cpcb_status)
     return df

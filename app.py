@@ -797,7 +797,7 @@ with tab3:
     st.markdown("### 🗺️ Pan-India Real-Time Station Network")
     st.caption("Monitoring active CAAQMS telemetry stations spanning all Indian states & Union Territories")
 
-    national_df = fetch_pan_india_stations()
+    national_df = fetch_pan_india_stations(live_data)
     cleanest = national_df.sort_values(by="AQI", ascending=True).iloc[0]
     dirtiest = national_df.sort_values(by="AQI", ascending=False).iloc[0]
 
