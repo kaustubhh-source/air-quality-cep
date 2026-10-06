@@ -703,76 +703,96 @@ def generate_regional_fallback(lat: float, lon: float, location_name: str):
 def fetch_waqi_live_ground_sensor(lat: float, lon: float, location_name: str = ""):
     """
     Ingests real-time CPCB / MPCB / SAFAR physical ground station telemetry from WAQI/AQICN.
-    Returns physical station AQI, PM2.5, PM10, station name, and distance.
+    Uses strict 25 km distance radius guard to prevent geo-mismatched distant stations.
     """
-    token = AQICN_TOKEN if AQICN_TOKEN else "demo"
-    url = f"https://api.waqi.info/feed/geo:{lat};{lon}/?token={token}"
-    try:
-        r = requests.get(url, headers=HEADERS, timeout=6)
-        if r.status_code == 200:
-            res_json = r.json()
-            if res_json.get("status") == "ok" and "data" in res_json:
-                data = res_json["data"]
-                ground_aqi = int(data.get("aqi", 0))
-                
-                # Physical station metadata
-                city_info = data.get("city", {})
-                st_name = city_info.get("name", location_name)
-                st_geo = city_info.get("geo", [lat, lon])
-                st_lat, st_lon = (float(st_geo[0]), float(st_geo[1])) if len(st_geo) >= 2 else (lat, lon)
-                
-                dist_km = haversine_distance(lat, lon, st_lat, st_lon)
-                
-                # Extract individual pollutants
-                iaqi = data.get("iaqi", {})
-                pm25_val = float(iaqi.get("pm25", {}).get("v", 0))
-                pm10_val = float(iaqi.get("pm10", {}).get("v", 0))
-                no2_val = float(iaqi.get("no2", {}).get("v", 0))
-                so2_val = float(iaqi.get("so2", {}).get("v", 0))
-                co_val = float(iaqi.get("co", {}).get("v", 0))
-                o3_val = float(iaqi.get("o3", {}).get("v", 0))
+    token = AQICN_TOKEN if AQICN_TOKEN else "f67762d5b7d7bb1892415cc3ea8865e61f2abd3d"
+    
+    # Extract main city / area keywords from location_name
+    primary_city = location_name.split(",")[0].strip() if location_name else ""
+    secondary_city = location_name.split(",")[1].strip() if (location_name and "," in location_name) else ""
+    
+    urls_to_try = [
+        f"https://api.waqi.info/feed/geo:{lat};{lon}/?token={token}"
+    ]
+    if primary_city:
+        urls_to_try.append(f"https://api.waqi.info/feed/{urllib.parse.quote(primary_city)}/?token={token}")
+    if secondary_city and secondary_city.lower() != "india":
+        urls_to_try.append(f"https://api.waqi.info/feed/{urllib.parse.quote(secondary_city)}/?token={token}")
 
-                # Calculate CPCB sub-indices
-                sub_p25 = calculate_cpcb_subindex_pm25(pm25_val) if pm25_val > 0 else ground_aqi
-                sub_p10 = calculate_cpcb_subindex_pm10(pm10_val) if pm10_val > 0 else ground_aqi
-                sub_no2 = calculate_cpcb_subindex_no2(no2_val) if no2_val > 0 else 20
-                sub_so2 = calculate_cpcb_subindex_so2(so2_val) if so2_val > 0 else 10
-                sub_co  = calculate_cpcb_subindex_co(co_val) if co_val > 0 else 10
-                
-                # Composite CPCB AQI
-                cpcb_aqi = max(sub_p25, sub_p10, ground_aqi)
-                dominant_pol = str(data.get("dominentpol", "pm25")).upper()
-                if dominant_pol == "PM25":
-                    dominant_pol = "PM2.5"
+    for url in urls_to_try:
+        try:
+            r = requests.get(url, headers=HEADERS, timeout=5)
+            if r.status_code == 200:
+                res_json = r.json()
+                if res_json.get("status") == "ok" and "data" in res_json:
+                    data = res_json["data"]
+                    ground_aqi = int(data.get("aqi", 0))
+                    if ground_aqi <= 0:
+                        continue
+                    
+                    # Physical station metadata
+                    city_info = data.get("city", {})
+                    st_name = city_info.get("name", location_name)
+                    st_geo = city_info.get("geo", [lat, lon])
+                    st_lat, st_lon = (float(st_geo[0]), float(st_geo[1])) if len(st_geo) >= 2 else (lat, lon)
+                    
+                    dist_km = haversine_distance(lat, lon, st_lat, st_lon)
+                    
+                    # STRICT DISTANCE GUARD: If returned station is > 25 km away, skip this result!
+                    if dist_km > 25.0:
+                        continue
+                    
+                    # Extract individual pollutants
+                    iaqi = data.get("iaqi", {})
+                    pm25_val = float(iaqi.get("pm25", {}).get("v", 0))
+                    pm10_val = float(iaqi.get("pm10", {}).get("v", 0))
+                    no2_val = float(iaqi.get("no2", {}).get("v", 0))
+                    so2_val = float(iaqi.get("so2", {}).get("v", 0))
+                    co_val = float(iaqi.get("co", {}).get("v", 0))
+                    o3_val = float(iaqi.get("o3", {}).get("v", 0))
 
-                sub_map = {
-                    "PM2.5": sub_p25,
-                    "PM10": sub_p10,
-                    "NO2": sub_no2,
-                    "SO2": sub_so2,
-                    "CO": sub_co
-                }
+                    # Calculate CPCB sub-indices
+                    sub_p25 = calculate_cpcb_subindex_pm25(pm25_val) if pm25_val > 0 else ground_aqi
+                    sub_p10 = calculate_cpcb_subindex_pm10(pm10_val) if pm10_val > 0 else ground_aqi
+                    sub_no2 = calculate_cpcb_subindex_no2(no2_val) if no2_val > 0 else 20
+                    sub_so2 = calculate_cpcb_subindex_so2(so2_val) if so2_val > 0 else 10
+                    sub_co  = calculate_cpcb_subindex_co(co_val) if co_val > 0 else 10
+                    
+                    # Composite CPCB AQI
+                    cpcb_aqi = max(sub_p25, sub_p10, ground_aqi)
+                    dominant_pol = str(data.get("dominentpol", "pm25")).upper()
+                    if dominant_pol == "PM25":
+                        dominant_pol = "PM2.5"
 
-                return {
-                    "location": location_name,
-                    "lat": lat,
-                    "lon": lon,
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M IST"),
-                    "aqi": cpcb_aqi,
-                    "pm25": round(pm25_val, 1) if pm25_val > 0 else round(cpcb_aqi * 0.45, 1),
-                    "pm10": round(pm10_val, 1) if pm10_val > 0 else round(cpcb_aqi * 0.95, 1),
-                    "no2": round(no2_val, 1) if no2_val > 0 else 15.0,
-                    "so2": round(so2_val, 1) if so2_val > 0 else 6.0,
-                    "co": round(co_val, 2) if co_val > 0 else 0.8,
-                    "o3": round(o3_val, 1) if o3_val > 0 else 24.0,
-                    "subindexes": sub_map,
-                    "dominant_pollutant": dominant_pol,
-                    "nearest_station_name": f"CPCB Station — {st_name}",
-                    "nearest_station_dist_km": round(dist_km, 1),
-                    "source": f"Physical Ground CAAQMS Station ({st_name})"
-                }
-    except Exception:
-        pass
+                    sub_map = {
+                        "PM2.5": sub_p25,
+                        "PM10": sub_p10,
+                        "NO2": sub_no2,
+                        "SO2": sub_so2,
+                        "CO": sub_co
+                    }
+
+                    return {
+                        "location": location_name,
+                        "lat": lat,
+                        "lon": lon,
+                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M IST"),
+                        "aqi": cpcb_aqi,
+                        "pm25": round(pm25_val, 1) if pm25_val > 0 else round(cpcb_aqi * 0.45, 1),
+                        "pm10": round(pm10_val, 1) if pm10_val > 0 else round(cpcb_aqi * 0.95, 1),
+                        "no2": round(no2_val, 1) if no2_val > 0 else 15.0,
+                        "so2": round(so2_val, 1) if so2_val > 0 else 6.0,
+                        "co": round(co_val, 2) if co_val > 0 else 0.8,
+                        "o3": round(o3_val, 1) if o3_val > 0 else 24.0,
+                        "subindexes": sub_map,
+                        "dominant_pollutant": dominant_pol,
+                        "nearest_station_name": f"CPCB Station — {st_name}",
+                        "nearest_station_dist_km": round(dist_km, 1),
+                        "source": f"Physical Ground CAAQMS Station ({st_name})"
+                    }
+        except Exception:
+            pass
+
     return None
 
 def fetch_live_ground_sensor(lat: float, lon: float, fallback_name: str = "Chembur, Mumbai"):
