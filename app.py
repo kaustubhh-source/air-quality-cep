@@ -975,6 +975,69 @@ with tab4:
         risk_badge_text = "#FF7C80"
         risk_label = f"Severe Risk of Complications"
 
+    CONDITION_ILLUSTRATIONS = {
+        "🫁 Asthma": """<svg width="110" height="110" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="60" cy="60" r="54" fill="#FEF3C7" stroke="#F59E0B" stroke-width="3"/>
+            <rect x="42" y="32" width="24" height="42" rx="6" fill="#3B82F6"/>
+            <rect x="48" y="24" width="12" height="10" rx="3" fill="#60A5FA"/>
+            <path d="M42 60 L66 60 L78 74 C80 76 78 80 74 80 L52 80 C48 80 44 76 44 72 Z" fill="#2563EB"/>
+            <circle cx="70" cy="70" r="4" fill="#93C5FD" opacity="0.8"/>
+            <path d="M80 72 Q92 68 98 70 Q92 76 80 76 Z" fill="#93C5FD" opacity="0.85"/>
+            <circle cx="90" cy="66" r="3" fill="#60A5FA" opacity="0.7"/>
+            <circle cx="100" cy="74" r="4" fill="#3B82F6" opacity="0.6"/>
+            <path d="M30 46 C24 54 26 70 34 72 C38 73 40 66 38 60 C36 54 34 48 30 46 Z" fill="#F59E0B" opacity="0.6"/>
+        </svg>""",
+        "🫀 Heart Issues": """<svg width="110" height="110" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="60" cy="60" r="54" fill="#FEE2E2" stroke="#EF4444" stroke-width="3"/>
+            <path d="M60 90 C30 72 20 54 20 40 C20 28 30 20 42 20 C50 20 56 24 60 30 C64 24 70 20 78 20 C90 20 100 28 100 40 C100 54 90 72 60 90 Z" fill="#EF4444"/>
+            <path d="M28 46 L42 46 L47 34 L53 58 L60 38 L66 50 L72 46 L92 46" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="60" cy="38" r="3" fill="#FEF08A"/>
+        </svg>""",
+        "🧏 Allergies": """<svg width="110" height="110" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="60" cy="60" r="54" fill="#ECFDF5" stroke="#10B981" stroke-width="3"/>
+            <circle cx="60" cy="50" r="24" fill="#FDE68A"/>
+            <path d="M50 46 Q54 44 58 46" stroke="#92400E" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M66 46 Q70 44 74 46" stroke="#92400E" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M62 48 Q64 54 60 56" stroke="#B45309" stroke-width="2.5"/>
+            <path d="M42 54 C42 54 60 58 78 54 C80 68 70 82 60 84 C50 82 40 68 42 54 Z" fill="#10B981" opacity="0.85"/>
+            <path d="M46 62 L56 70 L74 58" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="28" cy="34" r="4" fill="#F59E0B"/>
+            <circle cx="92" cy="36" r="5" fill="#F59E0B"/>
+            <circle cx="94" cy="74" r="3" fill="#10B981"/>
+        </svg>""",
+        "👃 Sinus": """<svg width="110" height="110" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="60" cy="60" r="54" fill="#E0F2FE" stroke="#0284C7" stroke-width="3"/>
+            <path d="M40 85 C40 65 45 35 65 35 C80 35 85 45 85 60 C85 70 80 85 75 85 Z" fill="#BAE6FD"/>
+            <circle cx="62" cy="48" r="6" fill="#EF4444" opacity="0.85"/>
+            <circle cx="70" cy="56" r="5" fill="#F59E0B" opacity="0.85"/>
+            <circle cx="58" cy="62" r="5" fill="#F59E0B" opacity="0.85"/>
+            <path d="M52 42 L44 36" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M64 38 L64 30" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M74 42 L82 36" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M32 65 C32 60 38 52 38 52 C38 52 44 60 44 65 C44 68.3 41.3 71 38 71 C34.7 71 32 68.3 32 65 Z" fill="#38BDF8"/>
+        </svg>""",
+        "🤒 Cold / Flu": """<svg width="110" height="110" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="60" cy="60" r="54" fill="#FFF7ED" stroke="#EA580C" stroke-width="3"/>
+            <circle cx="60" cy="55" r="26" fill="#FED7AA"/>
+            <rect x="46" y="35" width="28" height="10" rx="4" fill="#38BDF8"/>
+            <path d="M48 52 L54 56 L48 60" stroke="#C2410C" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <path d="M72 52 L66 56 L72 60" stroke="#C2410C" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <rect x="36" y="68" width="48" height="8" rx="4" fill="#FFFFFF" stroke="#94A3B8" stroke-width="2"/>
+            <rect x="38" y="70" width="24" height="4" rx="2" fill="#EF4444"/>
+            <circle cx="38" cy="72" r="6" fill="#EF4444"/>
+        </svg>""",
+        "🫁 Chronic (COPD)": """<svg width="110" height="110" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="60" cy="60" r="54" fill="#F3E8FF" stroke="#9333EA" stroke-width="3"/>
+            <path d="M54 36 C42 36 32 46 32 62 C32 78 44 84 52 82 C56 81 56 74 54 68 C52 62 54 44 54 36 Z" fill="#C084FC"/>
+            <path d="M66 36 C78 36 88 46 88 62 C88 78 76 84 68 82 C64 81 64 74 66 68 C68 62 66 44 66 36 Z" fill="#C084FC"/>
+            <rect x="57" y="26" width="6" height="20" rx="3" fill="#A855F7"/>
+            <circle cx="45" cy="58" r="4" fill="#EF4444" opacity="0.8"/>
+            <circle cx="75" cy="58" r="4" fill="#EF4444" opacity="0.8"/>
+            <path d="M60 22 L60 14" stroke="#9333EA" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="60" cy="12" r="3" fill="#38BDF8"/>
+        </svg>"""
+    }
+
     cond_data = {
         "🫁 Asthma": {
             "title": "Asthma",
@@ -1063,14 +1126,17 @@ with tab4:
 
     c_left, c_right = st.columns([1, 1.8])
     with c_left:
+        illustration_svg = CONDITION_ILLUSTRATIONS.get(cond_choice, "")
         st.markdown(f"""
-        <div class="metric-card" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); text-align: center; padding: 25px 15px; border-radius: 12px;">
-            <div style="font-size: 52px; margin-bottom: 8px;">{cond_choice.split()[0]}</div>
-            <div style="font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 12px;">{info['title']}</div>
-            <div style="background: {risk_badge_bg}; color: {risk_badge_text}; border: 1px solid {risk_badge_border}; padding: 6px 14px; border-radius: 18px; font-weight: 700; font-size: 13px; display: inline-block;">
-                ● {risk_label}
+        <div style="background: #FEF9D7; border-radius: 16px; padding: 25px 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.12); margin-bottom: 15px; border: 1px solid #FDE68A;">
+            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 12px; min-height: 120px;">
+                {illustration_svg}
             </div>
-            <div style="font-size: 12px; color: #aaa; margin-top: 14px;">
+            <div style="font-size: 19px; font-weight: 800; color: #1e293b; margin-bottom: 12px; font-family: sans-serif;">{info['title']}</div>
+            <div style="background: #E5B82A; color: #ffffff; padding: 7px 18px; border-radius: 20px; font-weight: 700; font-size: 13px; display: inline-block; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
+                ● {risk_level} Risk of {info['title']}
+            </div>
+            <div style="font-size: 12px; color: #475569; margin-top: 14px; line-height: 1.45; font-weight: 500;">
                 Risk of <b>{info['title']}</b> symptoms is <b>{risk_level}</b> when AQI is <b>{cat_name} ({aqi_val})</b>.
             </div>
         </div>
