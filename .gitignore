@@ -18,3 +18,5 @@ Thumbs.db
 .streamlit/secrets.toml
 __pycache__/
 *.pyc
+civic_records.db
+*.db
