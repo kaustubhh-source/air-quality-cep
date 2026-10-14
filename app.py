@@ -17,6 +17,11 @@ import plotly.express as px
 import streamlit as st
 from dotenv import load_dotenv
 
+try:
+    from streamlit_geolocation import streamlit_geolocation
+except Exception:
+    streamlit_geolocation = None
+
 from src.live_feed import (
     fetch_live_ground_sensor,
     geocode_place,
@@ -40,7 +45,7 @@ from src.db import (
 )
 
 # -------------------------------------------------------------
-# 1. PAGE CONFIG & STICKY TAB CSS
+# 1. PAGE CONFIG & CLAYMORPHIC DESIGN SYSTEM
 # -------------------------------------------------------------
 load_dotenv()
 st.set_page_config(
@@ -52,10 +57,10 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* 1. Global Midnight Obsidian Canvas */
+    /* 1. Global Soft Slate Matte Canvas */
     body, .stApp {
-        background: radial-gradient(1200px 800px at 50% -100px, rgba(30, 41, 59, 0.35) 0%, rgba(9, 13, 22, 0.98) 70%, #06090e 100%) !important;
-        color: #f8fafc !important;
+        background: radial-gradient(1200px 800px at 50% 0px, #161f2e 0%, #0d121c 65%, #080c14 100%) !important;
+        color: #f1f5f9 !important;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
         min-height: 100vh;
     }
@@ -70,39 +75,49 @@ st.markdown("""
         color: #cbd5e1;
     }
 
-    /* 2. Executive Dark Slate Glass Cards */
-    .glass-card, .metric-card, .pravaah-card {
-        background: rgba(17, 24, 39, 0.75) !important;
-        backdrop-filter: blur(16px) saturate(160%) !important;
-        -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-radius: 14px !important;
+    /* 2. Tactile 3D Claymorphic Cards (Zero Glassmorphism / Frosted Blur) */
+    .clay-card, .glass-card, .metric-card, .pravaah-card,
+    div[style*="background: rgba(17, 24, 39"] {
+        background: #172131 !important;
+        border-radius: 22px !important;
+        border: 1px solid rgba(255, 255, 255, 0.06) !important;
         padding: 18px !important;
-        box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.35) !important;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: 8px 8px 18px rgba(0, 0, 0, 0.42),
+                    -5px -5px 14px rgba(255, 255, 255, 0.03),
+                    inset 2px 2px 4px rgba(255, 255, 255, 0.09),
+                    inset -3px -3px 6px rgba(0, 0, 0, 0.42) !important;
+        transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
-    .glass-card:hover, .metric-card:hover, .pravaah-card:hover {
-        border-color: rgba(255, 255, 255, 0.16) !important;
+    .clay-card:hover, .glass-card:hover, .metric-card:hover, .pravaah-card:hover,
+    div[style*="background: rgba(17, 24, 39"]:hover {
         transform: translateY(-2px) !important;
-        box-shadow: 0 10px 32px rgba(0, 0, 0, 0.45) !important;
+        box-shadow: 12px 12px 26px rgba(0, 0, 0, 0.52),
+                    -7px -7px 18px rgba(255, 255, 255, 0.05),
+                    inset 2px 2px 4px rgba(255, 255, 255, 0.12),
+                    inset -3px -3px 6px rgba(0, 0, 0, 0.42) !important;
     }
 
-    .hero-card {
-        background: rgba(15, 23, 42, 0.85) !important;
-        backdrop-filter: blur(20px) !important;
-        -webkit-backdrop-filter: blur(20px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 16px !important;
+    .hero-card, .clay-hero {
+        background: linear-gradient(145deg, #1d293d, #141c2a) !important;
+        border-radius: 26px !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
         padding: 24px !important;
         text-align: center !important;
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45) !important;
+        box-shadow: 12px 12px 28px rgba(0, 0, 0, 0.52),
+                    -7px -7px 18px rgba(255, 255, 255, 0.04),
+                    inset 3px 3px 6px rgba(255, 255, 255, 0.10),
+                    inset -4px -4px 8px rgba(0, 0, 0, 0.45) !important;
         position: relative !important;
-        transition: all 0.3s ease !important;
+        transition: all 0.25s ease !important;
     }
 
-    .hero-card:hover {
-        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55) !important;
+    .hero-card:hover, .clay-hero:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 16px 16px 34px rgba(0, 0, 0, 0.60),
+                    -8px -8px 22px rgba(255, 255, 255, 0.06),
+                    inset 3px 3px 6px rgba(255, 255, 255, 0.14),
+                    inset -4px -4px 8px rgba(0, 0, 0, 0.45) !important;
     }
 
     /* 3. Pulsing Animated Live Beacon */
@@ -123,7 +138,7 @@ st.markdown("""
         animation: live-pulse 2s infinite !important;
     }
 
-    /* 4. Frosted Sticky Tab Navigation */
+    /* 4. Claymorphic Sticky Tab Navigation */
     div[data-testid="stTabs"] {
         margin-top: 10px;
     }
@@ -134,14 +149,12 @@ st.markdown("""
         position: sticky !important;
         position: -webkit-sticky !important;
         top: 0px !important;
-        background: rgba(9, 13, 22, 0.92) !important;
-        backdrop-filter: blur(16px) !important;
-        -webkit-backdrop-filter: blur(16px) !important;
+        background: #0e141f !important;
         z-index: 1000 !important;
         padding-top: 8px !important;
         padding-bottom: 4px !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.06) !important;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.40) !important;
         width: 100% !important;
     }
 
@@ -155,19 +168,20 @@ st.markdown("""
         font-weight: 600 !important;
         color: #94a3b8 !important;
         padding: 8px 18px !important;
-        border-radius: 8px 8px 0 0 !important;
+        border-radius: 14px 14px 0 0 !important;
         transition: all 0.2s ease !important;
     }
 
     button[data-baseweb="tab"]:hover, button[role="tab"]:hover {
         color: #f8fafc !important;
-        background-color: rgba(255, 255, 255, 0.05) !important;
+        background-color: rgba(255, 255, 255, 0.04) !important;
     }
 
     button[aria-selected="true"] {
         color: #ffffff !important;
-        border-bottom: 2.5px solid #38bdf8 !important;
-        background: rgba(56, 189, 248, 0.08) !important;
+        background: #172131 !important;
+        box-shadow: 4px -2px 10px rgba(0, 0, 0, 0.25), inset 1px 1px 2px rgba(255, 255, 255, 0.12) !important;
+        border-bottom: 3px solid #38bdf8 !important;
         font-weight: 700 !important;
     }
 
@@ -175,63 +189,67 @@ st.markdown("""
         background-color: #38bdf8 !important;
     }
     div[data-baseweb="tab-border"] {
-        background-color: rgba(255, 255, 255, 0.08) !important;
+        background-color: rgba(255, 255, 255, 0.06) !important;
     }
 
-    /* 5. Institutional Badges */
+    /* 5. Tactile Clay Badges */
     .badge-tag {
-        background: rgba(56, 189, 248, 0.12);
+        background: #142337;
         color: #38bdf8;
-        border: 1px solid rgba(56, 189, 248, 0.3);
+        border: 1px solid rgba(56, 189, 248, 0.35);
         border-radius: 20px;
-        padding: 4px 12px;
+        padding: 5px 14px;
         font-size: 11px;
         font-weight: 700;
         letter-spacing: 0.3px;
         display: inline-flex;
         align-items: center;
         gap: 5px;
+        box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.3), inset 1px 1px 2px rgba(255, 255, 255, 0.12);
     }
     .badge-green {
-        background: rgba(16, 185, 129, 0.12);
+        background: #122b22;
         color: #34d399;
-        border: 1px solid rgba(52, 211, 153, 0.3);
+        border: 1px solid rgba(52, 211, 153, 0.35);
         border-radius: 20px;
-        padding: 4px 12px;
+        padding: 5px 14px;
         font-size: 11px;
         font-weight: 700;
         letter-spacing: 0.3px;
         display: inline-flex;
         align-items: center;
         gap: 5px;
+        box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.3), inset 1px 1px 2px rgba(255, 255, 255, 0.12);
     }
     .badge-cream {
-        background: rgba(245, 158, 11, 0.12);
+        background: #2b2314;
         color: #fbbf24;
-        border: 1px solid rgba(245, 158, 11, 0.3);
+        border: 1px solid rgba(245, 158, 11, 0.35);
         border-radius: 20px;
-        padding: 4px 12px;
+        padding: 5px 14px;
         font-size: 11px;
         font-weight: 700;
         letter-spacing: 0.3px;
         display: inline-flex;
         align-items: center;
         gap: 5px;
+        box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.3), inset 1px 1px 2px rgba(255, 255, 255, 0.12);
     }
 
-    /* 6. Form Controls & Buttons */
+    /* 6. Claymorphic Recessed Input Wells & Tactile Press Buttons */
     div[data-baseweb="input"], div[data-baseweb="base-input"], div[data-baseweb="select"] > div {
-        background: rgba(15, 23, 42, 0.85) !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        border-radius: 10px !important;
-        color: #f8fafc !important;
-        backdrop-filter: blur(12px) !important;
+        background: #111722 !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 16px !important;
+        color: #f1f5f9 !important;
+        box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.45),
+                    inset -2px -2px 6px rgba(255, 255, 255, 0.03) !important;
         transition: all 0.2s ease !important;
     }
 
     div[data-baseweb="input"]:focus-within, div[data-baseweb="base-input"]:focus-within, div[data-baseweb="select"] > div:focus-within {
         border-color: #38bdf8 !important;
-        box-shadow: 0 0 14px rgba(56, 189, 248, 0.25) !important;
+        box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.4), 0 0 12px rgba(56, 189, 248, 0.25) !important;
     }
 
     input.stTextInput, div[data-baseweb="input"] input {
@@ -242,30 +260,40 @@ st.markdown("""
     }
 
     div.stButton > button {
-        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.14) !important;
-        border-radius: 10px !important;
-        color: #f8fafc !important;
+        background: linear-gradient(145deg, #223044, #182232) !important;
+        border: 1px solid rgba(255, 255, 255, 0.10) !important;
+        border-radius: 18px !important;
+        color: #f1f5f9 !important;
         font-weight: 700 !important;
         letter-spacing: 0.3px !important;
-        padding: 7px 18px !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
-        transition: all 0.2s ease !important;
+        padding: 8px 20px !important;
+        box-shadow: 6px 6px 14px rgba(0, 0, 0, 0.40),
+                    -4px -4px 10px rgba(255, 255, 255, 0.04),
+                    inset 1px 1px 3px rgba(255, 255, 255, 0.14) !important;
+        transition: all 0.18s ease !important;
     }
 
     div.stButton > button:hover {
-        background: linear-gradient(135deg, #334155 0%, #1e293b 100%) !important;
-        border-color: rgba(56, 189, 248, 0.5) !important;
+        background: linear-gradient(145deg, #2a3b54, #1f2a3d) !important;
+        border-color: rgba(56, 189, 248, 0.4) !important;
         color: #ffffff !important;
-        transform: translateY(-1px) !important;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 12px rgba(56, 189, 248, 0.2) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 8px 8px 18px rgba(0, 0, 0, 0.50),
+                    -5px -5px 12px rgba(255, 255, 255, 0.06),
+                    inset 1px 1px 3px rgba(255, 255, 255, 0.20) !important;
+    }
+
+    div.stButton > button:active {
+        transform: translateY(1px) scale(0.98) !important;
+        box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.60),
+                    inset -2px -2px 5px rgba(255, 255, 255, 0.06) !important;
     }
 
     /* 7. Scrollbars */
     ::-webkit-scrollbar { width: 7px; height: 7px; }
-    ::-webkit-scrollbar-track { background: #090d16; }
-    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+    ::-webkit-scrollbar-track { background: #0c1017; }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 6px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
 
     /* 8. Mobile Media Queries (width <= 768px) */
     @media (max-width: 768px) {
@@ -289,11 +317,11 @@ st.markdown("""
             white-space: nowrap !important;
             flex-shrink: 0 !important;
         }
-        .hero-card {
-            padding: 16px !important;
+        .hero-card, .clay-hero {
+            padding: 18px !important;
         }
-        .metric-card {
-            padding: 12px !important;
+        .metric-card, .clay-card {
+            padding: 14px !important;
             margin-bottom: 8px !important;
         }
     }
@@ -301,15 +329,85 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 2. DATABASE & SESSION STATE INITIALIZATION
+# 2. DYNAMIC GEOLOCATION & SESSION STATE INITIALIZATION
 # -------------------------------------------------------------
+def detect_user_ip_location():
+    """
+    Fetches high-accuracy IP-based location for GPS auto-detection.
+    Extracts real client IP from Streamlit headers and strictly validates
+    against Indian national boundaries to prevent cloud datacenter spoofing.
+    """
+    client_ip = None
+    try:
+        headers = getattr(st.context, 'headers', {})
+        if headers:
+            for h in ['cf-connecting-ip', 'x-forwarded-for', 'x-real-ip']:
+                val = headers.get(h)
+                if val:
+                    candidate = val.split(',')[0].strip()
+                    if candidate and not candidate.startswith(('10.', '192.168.', '172.16.', '127.')):
+                        client_ip = candidate
+                        break
+        if not client_ip:
+            ctx_ip = getattr(st.context, 'ip_address', None)
+            if ctx_ip and not ctx_ip.startswith(('10.', '192.168.', '172.16.', '127.')):
+                client_ip = ctx_ip
+    except Exception:
+        pass
+
+    # 1. Primary: ip-api.com with client IP (Fast, high rate limit, accurate Indian ASN resolution)
+    try:
+        url = f"http://ip-api.com/json/{client_ip}" if client_ip else "http://ip-api.com/json/"
+        r = requests.get(url, timeout=3)
+        if r.status_code == 200:
+            data = r.json()
+            lat = float(data.get("lat", 0))
+            lon = float(data.get("lon", 0))
+            if is_within_india(lat, lon):
+                city = data.get("city", "")
+                region = data.get("regionName", "")
+                rev = reverse_geocode(lat, lon)
+                if rev and "Location (" not in rev and "Station (" not in rev:
+                    return lat, lon, rev
+                if city and region:
+                    return lat, lon, f"{city}, {region}"
+                elif city:
+                    return lat, lon, f"{city}, India"
+    except Exception:
+        pass
+
+    # 2. Secondary: ipapi.co with client IP
+    try:
+        url = f"https://ipapi.co/{client_ip}/json/" if client_ip else "https://ipapi.co/json/"
+        r = requests.get(url, timeout=3)
+        if r.status_code == 200:
+            data = r.json()
+            lat = float(data.get("latitude", 0))
+            lon = float(data.get("longitude", 0))
+            if is_within_india(lat, lon):
+                city = data.get("city", "")
+                region = data.get("region", "")
+                rev = reverse_geocode(lat, lon)
+                if rev and "Location (" not in rev and "Station (" not in rev:
+                    return lat, lon, rev
+                if city and region:
+                    return lat, lon, f"{city}, {region}"
+                elif city:
+                    return lat, lon, f"{city}, India"
+    except Exception:
+        pass
+
+    # Safe Indian Fallback Anchor (University of Mumbai CEP Baseline)
+    return 19.0522, 72.8994, "Chembur, Mumbai"
+
 init_db()
 
 # Coordinates state management - strict Indian territory guard
 if "target_lat" not in st.session_state or not is_within_india(st.session_state.get("target_lat", 0), st.session_state.get("target_lon", 0)):
-    st.session_state["target_lat"] = 19.0522
-    st.session_state["target_lon"] = 72.8994
-    st.session_state["target_name"] = "Chembur, Mumbai"
+    init_lat, init_lon, init_name = detect_user_ip_location()
+    st.session_state["target_lat"] = init_lat
+    st.session_state["target_lon"] = init_lon
+    st.session_state["target_name"] = init_name
 
 # -------------------------------------------------------------
 # 3. CPCB STANDARD SCALES & ADVISORIES
@@ -438,69 +536,6 @@ active_alert = get_active_broadcast()
 if active_alert:
     st.error(f"🚨 **EMERGENCY CIVIC DIRECTIVE ({active_alert[1].upper()}):** {active_alert[0]}")
 
-def detect_user_ip_location():
-    """
-    Fetches high-accuracy IP-based location for GPS auto-detection.
-    Extracts real client IP from Streamlit headers and strictly validates
-    against Indian national boundaries to prevent cloud datacenter spoofing.
-    """
-    client_ip = None
-    try:
-        headers = getattr(st.context, 'headers', {})
-        if headers:
-            for h in ['cf-connecting-ip', 'x-forwarded-for', 'x-real-ip']:
-                val = headers.get(h)
-                if val:
-                    candidate = val.split(',')[0].strip()
-                    if candidate and not candidate.startswith(('10.', '192.168.', '172.16.', '127.')):
-                        client_ip = candidate
-                        break
-        if not client_ip:
-            ctx_ip = getattr(st.context, 'ip_address', None)
-            if ctx_ip and not ctx_ip.startswith(('10.', '192.168.', '172.16.', '127.')):
-                client_ip = ctx_ip
-    except Exception:
-        pass
-
-    # 1. Try ipapi.co with client IP
-    try:
-        url = f"https://ipapi.co/{client_ip}/json/" if client_ip else "https://ipapi.co/json/"
-        r = requests.get(url, timeout=3)
-        if r.status_code == 200:
-            data = r.json()
-            lat = float(data.get("latitude", 0))
-            lon = float(data.get("longitude", 0))
-            if is_within_india(lat, lon):
-                city = data.get("city", "")
-                region = data.get("region", "")
-                if city and region:
-                    return lat, lon, f"{city}, {region}"
-                elif city:
-                    return lat, lon, f"{city}, India"
-    except Exception:
-        pass
-
-    # 2. Try ip-api.com with client IP
-    try:
-        url = f"http://ip-api.com/json/{client_ip}" if client_ip else "http://ip-api.com/json/"
-        r = requests.get(url, timeout=3)
-        if r.status_code == 200:
-            data = r.json()
-            lat = float(data.get("lat", 0))
-            lon = float(data.get("lon", 0))
-            if is_within_india(lat, lon):
-                city = data.get("city", "")
-                region = data.get("regionName", "")
-                if city and region:
-                    return lat, lon, f"{city}, {region}"
-                elif city:
-                    return lat, lon, f"{city}, India"
-    except Exception:
-        pass
-
-    # Safe Indian Fallback Anchor (University of Mumbai CEP Baseline)
-    return 19.0522, 72.8994, "Chembur, Mumbai"
-
 # -------------------------------------------------------------
 # 5. GLOBAL INSTITUTIONAL HEADER & UNIVERSAL LOCATION BAR
 # -------------------------------------------------------------
@@ -508,7 +543,7 @@ header_c1, header_c2 = st.columns([2.5, 1.2])
 with header_c1:
     st.markdown("""
     <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 4px;">
-        <div style="font-size: 32px; filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.4));">🌿</div>
+        <div style="font-size: 32px; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.4));">🌿</div>
         <div>
             <div style="font-size: 26px; font-weight: 900; letter-spacing: -0.5px; line-height: 1.15; color: #ffffff;">
                 PRAVAAH <span style="font-size: 14px; font-weight: 600; color: #38bdf8; letter-spacing: 0.2px;">| Atmospheric & Civic Intelligence</span>
@@ -528,22 +563,40 @@ with header_c2:
     </div>
     """, unsafe_allow_html=True)
 
-# Geolocation Row
-search_row1, search_row2 = st.columns([1.1, 3.8])
-with search_row1:
-    if st.button("📍 Auto-Detect GPS", use_container_width=True):
-        with st.spinner("Detecting current device location..."):
-            d_lat, d_lon, ip_place = detect_user_ip_location()
-            rev_name = reverse_geocode(d_lat, d_lon)
-            target_place = rev_name if (rev_name and "Location (" not in rev_name and "Station (" not in rev_name) else ip_place
-            st.session_state["target_lat"] = d_lat
-            st.session_state["target_lon"] = d_lon
-            st.session_state["target_name"] = target_place
-            st.rerun()
+# Precision Location & Search Row (Direct Hardware GPS + Network Auto-Detect + Search)
+search_c1, search_c2 = st.columns([1.5, 3.5])
+with search_c1:
+    b_col1, b_col2 = st.columns([1, 2.2])
+    with b_col1:
+        if streamlit_geolocation is not None:
+            # Native browser HTML5 device GPS sensor
+            geo_res = streamlit_geolocation()
+            if geo_res and geo_res.get("latitude") is not None and geo_res.get("longitude") is not None:
+                b_lat = float(geo_res["latitude"])
+                b_lon = float(geo_res["longitude"])
+                if is_within_india(b_lat, b_lon):
+                    last_b = st.session_state.get("_last_browser_gps")
+                    if last_b != (b_lat, b_lon):
+                        st.session_state["_last_browser_gps"] = (b_lat, b_lon)
+                        st.session_state["target_lat"] = b_lat
+                        st.session_state["target_lon"] = b_lon
+                        rev_name = reverse_geocode(b_lat, b_lon)
+                        st.session_state["target_name"] = rev_name if rev_name else f"Local GPS ({b_lat:.4f}, {b_lon:.4f})"
+                        st.rerun()
+    with b_col2:
+        if st.button("📍 Live Location", use_container_width=True, help="Auto-detect current physical device location via network/IP"):
+            with st.spinner("Detecting physical device location..."):
+                d_lat, d_lon, ip_place = detect_user_ip_location()
+                rev_name = reverse_geocode(d_lat, d_lon)
+                target_place = rev_name if (rev_name and "Location (" not in rev_name and "Station (" not in rev_name) else ip_place
+                st.session_state["target_lat"] = d_lat
+                st.session_state["target_lon"] = d_lon
+                st.session_state["target_name"] = target_place
+                st.rerun()
 
-with search_row2:
+with search_c2:
     with st.form("search_bar_form", clear_on_submit=False):
-        f_col1, f_col2 = st.columns([4, 1])
+        f_col1, f_col2 = st.columns([4.2, 1])
         with f_col1:
             loc_input = st.text_input("Location Query", placeholder="Search any Indian city, landmark, or PIN code (e.g., Chembur, Connaught Place, Whitefield)...", label_visibility="collapsed")
         with f_col2:
@@ -557,25 +610,6 @@ with search_row2:
                     st.rerun()
                 else:
                     st.warning(f"⚠️ Could not locate '{loc_input.strip()}'. Please try another city, landmark, or PIN code.")
-
-# Quick Indian Metro Hubs
-st.markdown("<div style='font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 6px; margin-bottom: 6px;'>⚡ Quick Metro Hubs:</div>", unsafe_allow_html=True)
-metro_cols = st.columns(6)
-metros = [
-    ("🏙️ Mumbai", 19.0522, 72.8994, "Chembur, Mumbai"),
-    ("🏛️ Delhi (CP)", 28.6315, 77.2167, "Connaught Place, New Delhi"),
-    ("💻 Bengaluru", 12.9166, 77.6101, "BTM Layout, Bengaluru"),
-    ("🎓 Pune", 18.5308, 73.8475, "Shivajinagar, Pune"),
-    ("🌆 Kolkata", 22.5448, 88.3426, "Victoria Memorial, Kolkata"),
-    ("🕌 Hyderabad", 17.4700, 78.4400, "Balanagar, Hyderabad")
-]
-for col, (m_label, m_lat, m_lon, m_name) in zip(metro_cols, metros):
-    with col:
-        if st.button(m_label, key=f"quick_{m_name}", use_container_width=True):
-            st.session_state["target_lat"] = m_lat
-            st.session_state["target_lon"] = m_lon
-            st.session_state["target_name"] = m_name
-            st.rerun()
 
 # -------------------------------------------------------------
 # 6. INGEST TELEMETRY
