@@ -514,6 +514,13 @@ def geocode_place(query: str):
 
 import math
 
+def is_within_india(lat: float, lon: float) -> bool:
+    """Verifies if coordinates fall within Indian territorial boundaries."""
+    try:
+        return (6.5 <= float(lat) <= 37.5) and (68.0 <= float(lon) <= 97.5)
+    except Exception:
+        return False
+
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Calculates Haversine distance in kilometers between two GPS coordinates."""
     R = 6371.0
@@ -788,6 +795,10 @@ def fetch_waqi_live_ground_sensor(lat: float, lon: float, location_name: str = "
                         "CO": sub_co
                     }
 
+                    is_in_india = is_within_india(lat, lon)
+                    clean_name = st_name.replace("CPCB Station — ", "").replace("CPCB Station - ", "").strip()
+                    station_tag = f"CPCB Station — {clean_name}" if is_in_india else f"Air Monitor — {clean_name}"
+
                     return {
                         "location": location_name,
                         "lat": lat,
@@ -802,9 +813,9 @@ def fetch_waqi_live_ground_sensor(lat: float, lon: float, location_name: str = "
                         "o3": round(o3_val, 1) if o3_val > 0 else 24.0,
                         "subindexes": sub_map,
                         "dominant_pollutant": dominant_pol,
-                        "nearest_station_name": f"CPCB Station — {st_name}",
+                        "nearest_station_name": station_tag,
                         "nearest_station_dist_km": round(dist_km, 1),
-                        "source": f"Physical Ground CAAQMS Station ({st_name})"
+                        "source": f"Physical Ground CAAQMS Station ({clean_name})" if is_in_india else f"Ground Air Monitor ({clean_name})"
                     }
         except Exception:
             pass
