@@ -57,34 +57,36 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* 1. Global Soft Slate Matte Canvas */
+    /* 1. Global Atmospheric Nature Canvas */
     body, .stApp {
-        background: radial-gradient(1200px 800px at 50% 0px, #161f2e 0%, #0d121c 65%, #080c14 100%) !important;
+        background: radial-gradient(1300px 850px at 50% -50px, #142e27 0%, #0d1e1a 50%, #081311 100%) !important;
         color: #f1f5f9 !important;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
         min-height: 100vh;
+        overflow-x: hidden;
     }
 
     h1, h2, h3, h4, h5, h6, .stMarkdown h3, .stMarkdown h4 {
         color: #ffffff !important;
         font-weight: 800 !important;
         letter-spacing: -0.3px !important;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
     }
 
     p, span, div {
         color: #cbd5e1;
     }
 
-    /* 2. Tactile 3D Claymorphic Cards (Zero Glassmorphism / Frosted Blur) */
+    /* 2. Tactile 3D Botanical Claymorphic Cards */
     .clay-card, .glass-card, .metric-card, .pravaah-card,
     div[style*="background: rgba(17, 24, 39"] {
-        background: #172131 !important;
+        background: linear-gradient(145deg, #152923, #10201c) !important;
         border-radius: 22px !important;
-        border: 1px solid rgba(255, 255, 255, 0.06) !important;
+        border: 1px solid rgba(52, 211, 153, 0.12) !important;
         padding: 18px !important;
-        box-shadow: 8px 8px 18px rgba(0, 0, 0, 0.42),
-                    -5px -5px 14px rgba(255, 255, 255, 0.03),
-                    inset 2px 2px 4px rgba(255, 255, 255, 0.09),
+        box-shadow: 8px 8px 18px rgba(0, 0, 0, 0.45),
+                    -4px -4px 12px rgba(255, 255, 255, 0.03),
+                    inset 2px 2px 4px rgba(255, 255, 255, 0.08),
                     inset -3px -3px 6px rgba(0, 0, 0, 0.42) !important;
         transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
@@ -92,20 +94,21 @@ st.markdown("""
     .clay-card:hover, .glass-card:hover, .metric-card:hover, .pravaah-card:hover,
     div[style*="background: rgba(17, 24, 39"]:hover {
         transform: translateY(-2px) !important;
-        box-shadow: 12px 12px 26px rgba(0, 0, 0, 0.52),
-                    -7px -7px 18px rgba(255, 255, 255, 0.05),
+        border-color: rgba(52, 211, 153, 0.28) !important;
+        box-shadow: 12px 12px 26px rgba(0, 0, 0, 0.55),
+                    -6px -6px 16px rgba(52, 211, 153, 0.06),
                     inset 2px 2px 4px rgba(255, 255, 255, 0.12),
                     inset -3px -3px 6px rgba(0, 0, 0, 0.42) !important;
     }
 
     .hero-card, .clay-hero {
-        background: linear-gradient(145deg, #1d293d, #141c2a) !important;
+        background: linear-gradient(145deg, #1b3830, #122420) !important;
         border-radius: 26px !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border: 1px solid rgba(110, 231, 183, 0.16) !important;
         padding: 24px !important;
         text-align: center !important;
         box-shadow: 12px 12px 28px rgba(0, 0, 0, 0.52),
-                    -7px -7px 18px rgba(255, 255, 255, 0.04),
+                    -6px -6px 16px rgba(52, 211, 153, 0.06),
                     inset 3px 3px 6px rgba(255, 255, 255, 0.10),
                     inset -4px -4px 8px rgba(0, 0, 0, 0.45) !important;
         position: relative !important;
@@ -115,16 +118,16 @@ st.markdown("""
     .hero-card:hover, .clay-hero:hover {
         transform: translateY(-2px) !important;
         box-shadow: 16px 16px 34px rgba(0, 0, 0, 0.60),
-                    -8px -8px 22px rgba(255, 255, 255, 0.06),
+                    -8px -8px 22px rgba(52, 211, 153, 0.08),
                     inset 3px 3px 6px rgba(255, 255, 255, 0.14),
                     inset -4px -4px 8px rgba(0, 0, 0, 0.45) !important;
     }
 
     /* 3. Pulsing Animated Live Beacon */
     @keyframes live-pulse {
-        0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7); }
-        70% { box-shadow: 0 0 0 8px rgba(56, 189, 248, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+        0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+        70% { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
     }
 
     .pulse-dot, .live-beacon {
@@ -132,7 +135,7 @@ st.markdown("""
         width: 8px;
         height: 8px;
         border-radius: 50%;
-        background: #38bdf8;
+        background: #34d399;
         margin-right: 6px;
         vertical-align: middle;
         animation: live-pulse 2s infinite !important;
@@ -149,12 +152,12 @@ st.markdown("""
         position: sticky !important;
         position: -webkit-sticky !important;
         top: 0px !important;
-        background: #0e141f !important;
+        background: #0b1715 !important;
         z-index: 1000 !important;
         padding-top: 8px !important;
         padding-bottom: 4px !important;
-        border-bottom: 2px solid rgba(255, 255, 255, 0.06) !important;
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.40) !important;
+        border-bottom: 2px solid rgba(52, 211, 153, 0.12) !important;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45) !important;
         width: 100% !important;
     }
 
@@ -174,27 +177,27 @@ st.markdown("""
 
     button[data-baseweb="tab"]:hover, button[role="tab"]:hover {
         color: #f8fafc !important;
-        background-color: rgba(255, 255, 255, 0.04) !important;
+        background-color: rgba(52, 211, 153, 0.06) !important;
     }
 
     button[aria-selected="true"] {
         color: #ffffff !important;
-        background: #172131 !important;
-        box-shadow: 4px -2px 10px rgba(0, 0, 0, 0.25), inset 1px 1px 2px rgba(255, 255, 255, 0.12) !important;
-        border-bottom: 3px solid #38bdf8 !important;
+        background: #152923 !important;
+        box-shadow: 4px -2px 10px rgba(0, 0, 0, 0.3), inset 1px 1px 2px rgba(255, 255, 255, 0.12) !important;
+        border-bottom: 3px solid #10b981 !important;
         font-weight: 700 !important;
     }
 
     div[data-baseweb="tab-highlight"] {
-        background-color: #38bdf8 !important;
+        background-color: #10b981 !important;
     }
     div[data-baseweb="tab-border"] {
-        background-color: rgba(255, 255, 255, 0.06) !important;
+        background-color: rgba(52, 211, 153, 0.1) !important;
     }
 
-    /* 5. Tactile Clay Badges */
+    /* 5. Tactile Nature Badges */
     .badge-tag {
-        background: #142337;
+        background: #0c242c;
         color: #38bdf8;
         border: 1px solid rgba(56, 189, 248, 0.35);
         border-radius: 20px;
@@ -208,7 +211,7 @@ st.markdown("""
         box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.3), inset 1px 1px 2px rgba(255, 255, 255, 0.12);
     }
     .badge-green {
-        background: #122b22;
+        background: #06281e;
         color: #34d399;
         border: 1px solid rgba(52, 211, 153, 0.35);
         border-radius: 20px;
@@ -222,9 +225,9 @@ st.markdown("""
         box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.3), inset 1px 1px 2px rgba(255, 255, 255, 0.12);
     }
     .badge-cream {
-        background: #2b2314;
-        color: #fbbf24;
-        border: 1px solid rgba(245, 158, 11, 0.35);
+        background: #2b2308;
+        color: #fde047;
+        border: 1px solid rgba(253, 224, 71, 0.35);
         border-radius: 20px;
         padding: 5px 14px;
         font-size: 11px;
@@ -236,20 +239,20 @@ st.markdown("""
         box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.3), inset 1px 1px 2px rgba(255, 255, 255, 0.12);
     }
 
-    /* 6. Claymorphic Recessed Input Wells & Tactile Press Buttons */
+    /* 6. Claymorphic Recessed Input Wells & Tactile Botanical Buttons */
     div[data-baseweb="input"], div[data-baseweb="base-input"], div[data-baseweb="select"] > div {
-        background: #111722 !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        background: #0d1a17 !important;
+        border: 1px solid rgba(52, 211, 153, 0.15) !important;
         border-radius: 16px !important;
         color: #f1f5f9 !important;
-        box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.45),
-                    inset -2px -2px 6px rgba(255, 255, 255, 0.03) !important;
+        box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.5),
+                    inset -2px -2px 6px rgba(255, 255, 255, 0.02) !important;
         transition: all 0.2s ease !important;
     }
 
     div[data-baseweb="input"]:focus-within, div[data-baseweb="base-input"]:focus-within, div[data-baseweb="select"] > div:focus-within {
-        border-color: #38bdf8 !important;
-        box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.4), 0 0 12px rgba(56, 189, 248, 0.25) !important;
+        border-color: #34d399 !important;
+        box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.4), 0 0 12px rgba(52, 211, 153, 0.3) !important;
     }
 
     input.stTextInput, div[data-baseweb="input"] input {
@@ -260,10 +263,10 @@ st.markdown("""
     }
 
     div.stButton > button {
-        background: linear-gradient(145deg, #223044, #182232) !important;
-        border: 1px solid rgba(255, 255, 255, 0.10) !important;
+        background: linear-gradient(145deg, #1c3831, #132722) !important;
+        border: 1px solid rgba(52, 211, 153, 0.25) !important;
         border-radius: 18px !important;
-        color: #f1f5f9 !important;
+        color: #f0fdf4 !important;
         font-weight: 700 !important;
         letter-spacing: 0.3px !important;
         padding: 8px 20px !important;
@@ -274,12 +277,13 @@ st.markdown("""
     }
 
     div.stButton > button:hover {
-        background: linear-gradient(145deg, #2a3b54, #1f2a3d) !important;
-        border-color: rgba(56, 189, 248, 0.4) !important;
+        background: linear-gradient(145deg, #24473e, #17332b) !important;
+        border-color: #34d399 !important;
         color: #ffffff !important;
         transform: translateY(-2px) !important;
         box-shadow: 8px 8px 18px rgba(0, 0, 0, 0.50),
-                    -5px -5px 12px rgba(255, 255, 255, 0.06),
+                    -5px -5px 12px rgba(52, 211, 153, 0.08),
+                    0 0 12px rgba(52, 211, 153, 0.25),
                     inset 1px 1px 3px rgba(255, 255, 255, 0.20) !important;
     }
 
@@ -291,11 +295,106 @@ st.markdown("""
 
     /* 7. Scrollbars */
     ::-webkit-scrollbar { width: 7px; height: 7px; }
-    ::-webkit-scrollbar-track { background: #0c1017; }
-    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 6px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
+    ::-webkit-scrollbar-track { background: #081311; }
+    ::-webkit-scrollbar-thumb { background: rgba(52, 211, 153, 0.2); border-radius: 6px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(52, 211, 153, 0.4); }
 
-    /* 8. Mobile Media Queries (width <= 768px) */
+    /* 8. Live Atmospheric Background Animation */
+    .pravaah-atmosphere-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        pointer-events: none;
+        z-index: 0;
+        overflow: hidden;
+    }
+
+    .atmospheric-aura {
+        position: absolute;
+        top: -160px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 1000px;
+        height: 520px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(16, 185, 129, 0.16) 0%, rgba(56, 189, 248, 0.09) 45%, rgba(0, 0, 0, 0) 75%);
+        filter: blur(60px);
+        animation: aura-breathe 11s ease-in-out infinite alternate;
+    }
+
+    @keyframes aura-breathe {
+        0% { transform: translateX(-50%) scale(0.88); opacity: 0.5; }
+        50% { transform: translateX(-50%) scale(1.18); opacity: 0.9; }
+        100% { transform: translateX(-50%) scale(0.88); opacity: 0.5; }
+    }
+
+    .breeze-streamer {
+        position: absolute;
+        height: 2px;
+        background: linear-gradient(90deg, transparent 0%, rgba(52, 211, 153, 0.3) 30%, rgba(56, 189, 248, 0.35) 70%, transparent 100%);
+        border-radius: 4px;
+        filter: blur(1px);
+        opacity: 0.6;
+        animation: wind-flow 16s linear infinite;
+    }
+    .streamer-1 { top: 20%; left: -30%; width: 55%; animation-duration: 18s; animation-delay: 0s; }
+    .streamer-2 { top: 52%; left: -40%; width: 70%; animation-duration: 22s; animation-delay: 5s; }
+    .streamer-3 { top: 78%; left: -35%; width: 50%; animation-duration: 20s; animation-delay: 10s; }
+
+    @keyframes wind-flow {
+        0% { transform: translateX(0vw) translateY(0px); opacity: 0; }
+        15% { opacity: 0.6; }
+        85% { opacity: 0.6; }
+        100% { transform: translateX(160vw) translateY(-35px); opacity: 0; }
+    }
+
+    .air-spore {
+        position: absolute;
+        border-radius: 50%;
+        opacity: 0;
+        will-change: transform, opacity;
+        animation: spore-drift 14s ease-in-out infinite;
+    }
+
+    @keyframes spore-drift {
+        0% {
+            transform: translateY(105vh) translateX(0px) scale(0.6);
+            opacity: 0;
+        }
+        10% { opacity: 0.7; }
+        50% {
+            transform: translateY(50vh) translateX(35px) scale(1);
+            opacity: 0.85;
+        }
+        90% { opacity: 0.7; }
+        100% {
+            transform: translateY(-5vh) translateX(-20px) scale(0.7);
+            opacity: 0;
+        }
+    }
+
+    .spore-1  { left: 8%;  width: 5px; height: 5px; background: #34d399; box-shadow: 0 0 10px #34d399; animation-duration: 13s; animation-delay: 0s; }
+    .spore-2  { left: 16%; width: 8px; height: 8px; background: #38bdf8; box-shadow: 0 0 12px #38bdf8; animation-duration: 18s; animation-delay: 2s; }
+    .spore-3  { left: 24%; width: 4px; height: 4px; background: #fef08a; box-shadow: 0 0 8px #fef08a; animation-duration: 15s; animation-delay: 5s; }
+    .spore-4  { left: 32%; width: 6px; height: 6px; background: #6ee7b7; box-shadow: 0 0 10px #6ee7b7; animation-duration: 12s; animation-delay: 1s; }
+    .spore-5  { left: 40%; width: 9px; height: 9px; background: #38bdf8; box-shadow: 0 0 14px #38bdf8; animation-duration: 21s; animation-delay: 7s; }
+    .spore-6  { left: 48%; width: 5px; height: 5px; background: #fef08a; box-shadow: 0 0 10px #fef08a; animation-duration: 14s; animation-delay: 3s; }
+    .spore-7  { left: 56%; width: 7px; height: 7px; background: #34d399; box-shadow: 0 0 12px #34d399; animation-duration: 17s; animation-delay: 9s; }
+    .spore-8  { left: 63%; width: 4px; height: 4px; background: #7dd3fc; box-shadow: 0 0 8px #7dd3fc; animation-duration: 16s; animation-delay: 4s; }
+    .spore-9  { left: 71%; width: 6px; height: 6px; background: #fef08a; box-shadow: 0 0 10px #fef08a; animation-duration: 19s; animation-delay: 11s; }
+    .spore-10 { left: 79%; width: 8px; height: 8px; background: #34d399; box-shadow: 0 0 12px #34d399; animation-duration: 15s; animation-delay: 6s; }
+    .spore-11 { left: 87%; width: 5px; height: 5px; background: #38bdf8; box-shadow: 0 0 10px #38bdf8; animation-duration: 13s; animation-delay: 8s; }
+    .spore-12 { left: 93%; width: 7px; height: 7px; background: #6ee7b7; box-shadow: 0 0 12px #6ee7b7; animation-duration: 20s; animation-delay: 13s; }
+    .spore-13 { left: 12%; width: 4px; height: 4px; background: #fef08a; box-shadow: 0 0 8px #fef08a; animation-duration: 14s; animation-delay: 10s; }
+    .spore-14 { left: 28%; width: 6px; height: 6px; background: #34d399; box-shadow: 0 0 10px #34d399; animation-duration: 16s; animation-delay: 12s; }
+    .spore-15 { left: 45%; width: 5px; height: 5px; background: #7dd3fc; box-shadow: 0 0 10px #7dd3fc; animation-duration: 18s; animation-delay: 15s; }
+    .spore-16 { left: 59%; width: 7px; height: 7px; background: #fef08a; box-shadow: 0 0 12px #fef08a; animation-duration: 13s; animation-delay: 7s; }
+    .spore-17 { left: 75%; width: 5px; height: 5px; background: #34d399; box-shadow: 0 0 10px #34d399; animation-duration: 17s; animation-delay: 14s; }
+    .spore-18 { left: 83%; width: 6px; height: 6px; background: #38bdf8; box-shadow: 0 0 10px #38bdf8; animation-duration: 15s; animation-delay: 16s; }
+
+    /* 9. Mobile Media Queries (width <= 768px) */
     @media (max-width: 768px) {
         div[data-testid="stTabs"] > div:first-child,
         div[data-testid="stTabsHeader"],
@@ -326,6 +425,32 @@ st.markdown("""
         }
     }
 </style>
+
+<!-- Live Atmospheric Breeze & Nature Air Particles Layer -->
+<div class="pravaah-atmosphere-canvas" aria-hidden="true">
+    <div class="atmospheric-aura"></div>
+    <div class="breeze-streamer streamer-1"></div>
+    <div class="breeze-streamer streamer-2"></div>
+    <div class="breeze-streamer streamer-3"></div>
+    <div class="air-spore spore-1"></div>
+    <div class="air-spore spore-2"></div>
+    <div class="air-spore spore-3"></div>
+    <div class="air-spore spore-4"></div>
+    <div class="air-spore spore-5"></div>
+    <div class="air-spore spore-6"></div>
+    <div class="air-spore spore-7"></div>
+    <div class="air-spore spore-8"></div>
+    <div class="air-spore spore-9"></div>
+    <div class="air-spore spore-10"></div>
+    <div class="air-spore spore-11"></div>
+    <div class="air-spore spore-12"></div>
+    <div class="air-spore spore-13"></div>
+    <div class="air-spore spore-14"></div>
+    <div class="air-spore spore-15"></div>
+    <div class="air-spore spore-16"></div>
+    <div class="air-spore spore-17"></div>
+    <div class="air-spore spore-18"></div>
+</div>
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
