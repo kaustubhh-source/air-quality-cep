@@ -1617,7 +1617,7 @@ with tab4:
     hub1, hub2 = st.columns(2)
     with hub1:
         st.markdown("#### 📲 Multi-Channel Civic Advisory Broadcast")
-        share_msg = f"🌿 *PRAVAAH AIR ALERT: {st.session_state['target_name']}*\n• Current AQI: {aqi_val} ({cat_name})\n• PM2.5: {live_data.get('pm25', 12.1)} µg/m³ | PM10: {live_data.get('pm10', 24.7)} µg/m³\n• Health Directive: {action_adv}\n\nTrack real-time hyper-local air updates on the Pravaah Platform."
+        share_msg = f"🌿 *PRAVAAH AIR ALERT: {st.session_state['target_name']}*\n• Current AQI: {aqi_val} ({cat_name})\n• PM2.5: {live_data.get('pm25', 12.1)} µg/m³ | PM10: {live_data.get('pm10', 24.7)} µg/m³\n• Health Directive: {action_adv}\n\nTrack real-time hyper-local air updates on the Pravaah Platform click the below link \nhttps://pravaah.streamlit.app/"
         st.text_area("Advisory Broadcast Preview", share_msg, height=110)
         
         wa_url = f"https://api.whatsapp.com/send?text={urllib.parse.quote(share_msg)}"
