@@ -17,6 +17,6 @@ Thumbs.db
 .env
 .streamlit/secrets.toml
 __pycache__/
-*.pyc
 civic_records.db
 *.db
+scratch/

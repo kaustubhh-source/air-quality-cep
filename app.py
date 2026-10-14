@@ -51,58 +51,116 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* 1. Global Botanical & Aerosphere Palette (Shades of Green, Light Blue, White, Cream) */
+    /* 1. Global Deep Forest Canvas & Animated Ambient Auroras */
     body, .stApp {
-        background-color: #f7f9f6 !important;
-        background-image: none !important;
-        color: #1e293b !important;
+        background: radial-gradient(circle at 18% 18%, #0d3829 0%, #061e16 45%, #03120d 100%) !important;
+        color: #ecfdf5 !important;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+        min-height: 100vh;
+    }
+
+    .stApp::before {
+        content: "";
+        position: fixed;
+        top: -150px;
+        left: -100px;
+        width: 700px;
+        height: 700px;
+        background: radial-gradient(circle, rgba(16, 185, 129, 0.16) 0%, rgba(5, 150, 105, 0.04) 50%, transparent 70%);
+        pointer-events: none;
+        z-index: 0;
+        animation: float-aurora-1 16s ease-in-out infinite alternate;
+    }
+    .stApp::after {
+        content: "";
+        position: fixed;
+        bottom: -150px;
+        right: -100px;
+        width: 650px;
+        height: 650px;
+        background: radial-gradient(circle, rgba(52, 211, 153, 0.12) 0%, rgba(6, 182, 212, 0.04) 50%, transparent 70%);
+        pointer-events: none;
+        z-index: 0;
+        animation: float-aurora-2 20s ease-in-out infinite alternate;
+    }
+
+    @keyframes float-aurora-1 {
+        0% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(50px, 35px) scale(1.08); }
+        100% { transform: translate(-30px, 60px) scale(0.95); }
+    }
+    @keyframes float-aurora-2 {
+        0% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(-40px, -35px) scale(1.06); }
+        100% { transform: translate(35px, -50px) scale(0.94); }
     }
 
     h1, h2, h3, h4, h5, h6, .stMarkdown h3, .stMarkdown h4 {
-        color: #0f291e !important;
+        color: #f0fdf4 !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.3px !important;
     }
 
-    /* 2. Crisp White & Cream Surface Cards */
+    p, span, div {
+        color: #ecfdf5;
+    }
+
+    /* 2. Luxury Frosted Jade Glass Cards */
     .glass-card, .metric-card {
-        background: #ffffff !important;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 12px !important;
-        padding: 16px !important;
-        box-shadow: 0 1px 3px rgba(15, 41, 30, 0.05), 0 4px 12px -2px rgba(15, 41, 30, 0.02) !important;
-        transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease !important;
+        background: linear-gradient(135deg, rgba(13, 44, 34, 0.72) 0%, rgba(8, 30, 23, 0.8) 100%) !important;
+        backdrop-filter: blur(20px) saturate(180%) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+        border: 1px solid rgba(52, 211, 153, 0.22) !important;
+        border-radius: 14px !important;
+        padding: 18px !important;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
     .glass-card:hover, .metric-card:hover {
-        border-color: #a7f3d0 !important;
-        transform: translateY(-1.5px) !important;
-        box-shadow: 0 6px 16px rgba(15, 41, 30, 0.06) !important;
+        border-color: rgba(52, 211, 153, 0.5) !important;
+        transform: translateY(-3px) scale(1.008) !important;
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45), 0 0 24px rgba(16, 185, 129, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
     }
 
     .hero-card {
-        background: #ffffff !important;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 14px !important;
+        background: linear-gradient(135deg, rgba(16, 52, 40, 0.85) 0%, rgba(9, 32, 25, 0.9) 100%) !important;
+        backdrop-filter: blur(22px) saturate(180%) !important;
+        -webkit-backdrop-filter: blur(22px) saturate(180%) !important;
+        border: 1.5px solid rgba(52, 211, 153, 0.3) !important;
+        border-radius: 16px !important;
         padding: 24px !important;
         text-align: center !important;
-        box-shadow: 0 4px 14px rgba(15, 41, 30, 0.04) !important;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
         position: relative !important;
+        transition: all 0.35s ease !important;
     }
 
-    /* 3. Calm Botanical Indicator */
-    .live-beacon {
+    .hero-card:hover {
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55), 0 0 30px rgba(16, 185, 129, 0.25) !important;
+    }
+
+    /* 3. Pulsing Animated Live Beacon */
+    @keyframes live-pulse {
+        0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+        70% { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+    }
+
+    .pulse-dot, .live-beacon {
         display: inline-block;
         width: 8px;
         height: 8px;
         border-radius: 50%;
-        background: #10b981;
+        background: #34d399;
         margin-right: 6px;
         vertical-align: middle;
+        animation: live-pulse 2s infinite !important;
     }
 
-    /* 4. Warm Cream Sticky Tab Navigation */
+    /* 4. Frosted Sticky Tab Navigation */
     div[data-testid="stTabs"] {
-        margin-top: 8px;
+        margin-top: 10px;
     }
 
     div[data-testid="stTabs"] > div:first-child,
@@ -111,12 +169,14 @@ st.markdown("""
         position: sticky !important;
         position: -webkit-sticky !important;
         top: 0px !important;
-        background: #f7f9f6 !important;
+        background: rgba(4, 20, 14, 0.88) !important;
+        backdrop-filter: blur(18px) !important;
+        -webkit-backdrop-filter: blur(18px) !important;
         z-index: 1000 !important;
         padding-top: 8px !important;
         padding-bottom: 4px !important;
-        border-bottom: 1px solid #e5eae3 !important;
-        box-shadow: 0 2px 8px rgba(15, 41, 30, 0.03) !important;
+        border-bottom: 1px solid rgba(52, 211, 153, 0.2) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
         width: 100% !important;
     }
 
@@ -128,30 +188,38 @@ st.markdown("""
         background-color: transparent !important;
         font-size: 13.5px !important;
         font-weight: 600 !important;
-        color: #64748b !important;
-        padding: 8px 16px !important;
+        color: #94a3b8 !important;
+        padding: 8px 18px !important;
         border-radius: 8px 8px 0 0 !important;
-        transition: color 0.15s ease, background-color 0.15s ease !important;
+        transition: all 0.2s ease !important;
     }
 
     button[data-baseweb="tab"]:hover, button[role="tab"]:hover {
-        color: #064e3b !important;
-        background-color: rgba(16, 185, 129, 0.08) !important;
+        color: #6ee7b7 !important;
+        background-color: rgba(52, 211, 153, 0.1) !important;
     }
 
     button[aria-selected="true"] {
-        color: #059669 !important;
-        border-bottom: 2.5px solid #059669 !important;
-        background: transparent !important;
-        font-weight: 700 !important;
-        text-shadow: none !important;
+        color: #ffffff !important;
+        border-bottom: 3px solid #10b981 !important;
+        background: rgba(16, 185, 129, 0.18) !important;
+        font-weight: 800 !important;
+        text-shadow: 0 0 12px rgba(52, 211, 153, 0.4) !important;
+        box-shadow: 0 4px 14px rgba(16, 185, 129, 0.2) !important;
     }
 
-    /* 5. Institutional Badges (Green, Light Blue, Cream) */
+    div[data-baseweb="tab-highlight"] {
+        background-color: #10b981 !important;
+    }
+    div[data-baseweb="tab-border"] {
+        background-color: rgba(52, 211, 153, 0.2) !important;
+    }
+
+    /* 5. Institutional Badges */
     .badge-tag {
-        background: #f0f9ff;
-        color: #0284c7;
-        border: 1px solid #bae6fd;
+        background: rgba(56, 189, 248, 0.14);
+        color: #38bdf8;
+        border: 1px solid rgba(56, 189, 248, 0.35);
         border-radius: 20px;
         padding: 4px 12px;
         font-size: 11px;
@@ -162,9 +230,9 @@ st.markdown("""
         gap: 5px;
     }
     .badge-green {
-        background: #ecfdf5;
-        color: #047857;
-        border: 1px solid #a7f3d0;
+        background: rgba(16, 185, 129, 0.16);
+        color: #34d399;
+        border: 1px solid rgba(52, 211, 153, 0.35);
         border-radius: 20px;
         padding: 4px 12px;
         font-size: 11px;
@@ -173,11 +241,12 @@ st.markdown("""
         display: inline-flex;
         align-items: center;
         gap: 5px;
+        box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
     }
     .badge-cream {
-        background: #fefce8;
-        color: #854d0e;
-        border: 1px solid #fef08a;
+        background: rgba(245, 158, 11, 0.14);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.35);
         border-radius: 20px;
         padding: 4px 12px;
         font-size: 11px;
@@ -190,42 +259,51 @@ st.markdown("""
 
     /* 6. Form Controls & Buttons */
     div[data-baseweb="input"], div[data-baseweb="base-input"], div[data-baseweb="select"] > div {
-        background: #ffffff !important;
-        border: 1px solid #cbd5e1 !important;
-        border-radius: 8px !important;
-        color: #0f172a !important;
-        transition: border-color 0.15s ease !important;
+        background: rgba(8, 32, 24, 0.8) !important;
+        border: 1.5px solid rgba(52, 211, 153, 0.28) !important;
+        border-radius: 10px !important;
+        color: #ecfdf5 !important;
+        backdrop-filter: blur(12px) !important;
+        transition: all 0.25s ease !important;
     }
 
-    div[data-baseweb="input"]:focus-within, div[data-baseweb="base-input"]:focus-within {
-        border-color: #10b981 !important;
-        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.18) !important;
+    div[data-baseweb="input"]:focus-within, div[data-baseweb="base-input"]:focus-within, div[data-baseweb="select"] > div:focus-within {
+        border-color: #34d399 !important;
+        box-shadow: 0 0 16px rgba(52, 211, 153, 0.35) !important;
+    }
+
+    input.stTextInput, div[data-baseweb="input"] input {
+        color: #ecfdf5 !important;
+    }
+    input::placeholder {
+        color: #6ee7b788 !important;
     }
 
     div.stButton > button {
-        background: #059669 !important;
-        border: 1px solid #047857 !important;
-        border-radius: 8px !important;
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+        border: 1px solid rgba(110, 231, 183, 0.45) !important;
+        border-radius: 10px !important;
         color: #ffffff !important;
-        font-weight: 600 !important;
-        padding: 7px 16px !important;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
-        transition: background-color 0.15s ease, transform 0.15s ease !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.3px !important;
+        padding: 7px 18px !important;
+        box-shadow: 0 4px 16px rgba(5, 150, 105, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+        transition: all 0.25s ease !important;
     }
 
     div.stButton > button:hover {
-        background: #047857 !important;
-        border-color: #065f46 !important;
-        color: #ffffff !important;
-        transform: translateY(-1px) !important;
-        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08) !important;
+        background: linear-gradient(135deg, #10b981 0%, #34d399 100%) !important;
+        border-color: #6ee7b7 !important;
+        color: #042f2e !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 22px rgba(16, 185, 129, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
     }
 
     /* 7. Scrollbars */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #f7f9f6; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    ::-webkit-scrollbar { width: 7px; height: 7px; }
+    ::-webkit-scrollbar-track { background: #04140e; }
+    ::-webkit-scrollbar-thumb { background: rgba(52, 211, 153, 0.35); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #10b981; }
 
     /* 8. Mobile Media Queries (width <= 768px) */
     @media (max-width: 768px) {
@@ -294,22 +372,22 @@ def render_cpcb_scale_bar(aqi: int):
     pct = min(100, max(0, int((aqi / 500.0) * 100)))
     _, cat_color, _, _ = get_cpcb_category(aqi)
     st.markdown(f"""
-    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; margin-top: 14px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(15, 41, 30, 0.04);">
-        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #475569; font-weight: 700; margin-bottom: 8px;">
+    <div style="background: linear-gradient(135deg, rgba(13, 44, 34, 0.72) 0%, rgba(8, 30, 23, 0.8) 100%); backdrop-filter: blur(16px); border: 1px solid rgba(52, 211, 153, 0.22); border-radius: 14px; padding: 16px 20px; margin-top: 14px; margin-bottom: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.35);">
+        <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; margin-bottom: 8px;">
             <span style="color:#00B050;">● 0 Good</span>
-            <span style="color:#78b833;">● 100 Satisfactory</span>
-            <span style="color:#d97706;">● 200 Moderate</span>
-            <span style="color:#ea580c;">● 300 Poor</span>
-            <span style="color:#dc2626;">● 400 Very Poor</span>
-            <span style="color:#7030A0;">● 500+ Severe</span>
+            <span style="color:#92D050;">● 100 Satisfactory</span>
+            <span style="color:#FFC000;">● 200 Moderate</span>
+            <span style="color:#FF7C80;">● 300 Poor</span>
+            <span style="color:#C00000;">● 400 Very Poor</span>
+            <span style="color:#b24bf3;">● 500+ Severe</span>
         </div>
-        <div style="height: 8px; border-radius: 4px; background: linear-gradient(90deg, #00B050 0%, #92D050 20%, #FFC000 40%, #FF7C80 60%, #C00000 80%, #7030A0 100%); position: relative;">
-            <div style="position: absolute; left: {pct}%; top: -4px; width: 16px; height: 16px; border-radius: 50%; background: #ffffff; border: 2.5px solid #0f291e; transform: translateX(-50%); box-shadow: 0 1px 4px rgba(0,0,0,0.2);"></div>
+        <div style="height: 10px; border-radius: 5px; background: linear-gradient(90deg, #00B050 0%, #92D050 20%, #FFC000 40%, #FF7C80 60%, #C00000 80%, #7030A0 100%); position: relative; box-shadow: inset 0 1px 3px rgba(0,0,0,0.4);">
+            <div style="position: absolute; left: {pct}%; top: -4px; width: 18px; height: 18px; border-radius: 50%; background: #ffffff; border: 3px solid {cat_color}; transform: translateX(-50%); box-shadow: 0 0 12px {cat_color}, 0 2px 8px rgba(0,0,0,0.5);"></div>
         </div>
-        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-top: 6px;">
+        <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: #a7f3d0; margin-top: 8px;">
             <span>Clean Air</span>
-            <span style="color: {cat_color}; font-weight: 700;">Current AQI: {aqi} ({pct}% Scale)</span>
-            <span>Hazardous Level</span>
+            <span style="color: {cat_color}; font-weight: 800; text-shadow: 0 0 10px {cat_color}66;">Current AQI: {aqi} ({pct}% of Scale)</span>
+            <span>Severe Emergency</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -319,40 +397,40 @@ def render_pollutant_card(name: str, full_name: str, val: float, unit: str, safe
     pct_bar = min(100, int(ratio * 100))
     if ratio <= 1.0:
         status_label = "● Safe"
-        badge_color = "#047857"
-        badge_bg = "#ecfdf5"
-        badge_border = "#a7f3d0"
+        badge_color = "#10b981"
+        badge_bg = "rgba(16, 185, 129, 0.16)"
+        badge_border = "rgba(52, 211, 153, 0.35)"
     elif ratio <= 1.8:
         status_label = "● Moderate"
-        badge_color = "#b45309"
-        badge_bg = "#fefce8"
-        badge_border = "#fef08a"
+        badge_color = "#f59e0b"
+        badge_bg = "rgba(245, 158, 11, 0.16)"
+        badge_border = "rgba(245, 158, 11, 0.35)"
     else:
         status_label = "● High Risk"
-        badge_color = "#b91c1c"
-        badge_bg = "#fef2f2"
-        badge_border = "#fecaca"
+        badge_color = "#ef4444"
+        badge_bg = "rgba(239, 68, 68, 0.16)"
+        badge_border = "rgba(239, 68, 68, 0.35)"
 
     st.markdown(f"""
-    <div class="glass-card" style="border-left: 4px solid {badge_color}; padding: 16px 18px; margin-bottom: 12px;">
+    <div class="glass-card" style="border-left: 4.5px solid {badge_color}; padding: 18px 20px; margin-bottom: 12px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 13.5px; font-weight: 700; color: #0f291e;">{name} <small style="color: #64748b; font-weight: 500;">({full_name})</small></span>
-            <span style="background: {badge_bg}; color: {badge_color}; border: 1px solid {badge_border}; border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: 700;">{status_label}</span>
+            <span style="font-size: 14px; font-weight: 800; color: #f0fdf4;">{name} <small style="color: #a7f3d0; font-weight: 500;">({full_name})</small></span>
+            <span style="background: {badge_bg}; color: {badge_color}; border: 1px solid {badge_border}; border-radius: 20px; padding: 3px 12px; font-size: 11px; font-weight: 800; box-shadow: 0 0 10px {badge_color}33;">{status_label}</span>
         </div>
-        <div style="font-size: 26px; font-weight: 800; color: #0f172a; margin: 6px 0 2px 0;">
-            {val} <span style="font-size: 13px; font-weight: 500; color: #64748b;">{unit}</span>
+        <div style="font-size: 32px; font-weight: 900; color: #ffffff; margin: 6px 0 2px 0; text-shadow: 0 0 16px rgba(52, 211, 153, 0.25);">
+            {val} <span style="font-size: 13.5px; font-weight: 600; color: #6ee7b7;">{unit}</span>
         </div>
         <div style="margin: 8px 0 6px 0;">
-            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-bottom: 3px;">
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #a7f3d0; margin-bottom: 4px;">
                 <span>Safe Threshold: {safe_limit} {unit}</span>
                 <span style="color: {badge_color}; font-weight: 700;">{int(ratio * 100)}% of Limit</span>
             </div>
-            <div style="height: 5px; border-radius: 3px; background: #f1f5f9; overflow: hidden;">
-                <div style="height: 100%; width: {pct_bar}%; background: {badge_color}; border-radius: 3px;"></div>
+            <div style="height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.08); overflow: hidden;">
+                <div style="height: 100%; width: {pct_bar}%; background: {badge_color}; border-radius: 3px; box-shadow: 0 0 8px {badge_color}66;"></div>
             </div>
         </div>
-        <div style="font-size: 11.5px; color: #475569; margin-top: 6px; padding-top: 6px; border-top: 1px solid #f1f5f9; line-height: 1.45;">
-            <b>Impact:</b> {health_effect}
+        <div style="font-size: 12px; color: #cbd5e1; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(52, 211, 153, 0.15); line-height: 1.45;">
+            <b style="color: #a7f3d0;">Impact:</b> {health_effect}
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -360,35 +438,35 @@ def render_pollutant_card(name: str, full_name: str, val: float, unit: str, safe
 def render_major_pollutant_tile(title: str, sub_title: str, val: float, unit: str, safe_limit: float, icon_str: str):
     ratio = val / safe_limit if safe_limit > 0 else 0
     if ratio <= 0.6:
-        bar_color = "#059669"
-        icon_bg = "#ecfdf5"
+        bar_color = "#10b981"
+        icon_bg = "rgba(16, 185, 129, 0.15)"
     elif ratio <= 1.0:
-        bar_color = "#65a30d"
-        icon_bg = "#f7fee7"
+        bar_color = "#84cc16"
+        icon_bg = "rgba(132, 204, 22, 0.15)"
     elif ratio <= 1.5:
-        bar_color = "#d97706"
-        icon_bg = "#fefce8"
+        bar_color = "#f59e0b"
+        icon_bg = "rgba(245, 158, 11, 0.15)"
     elif ratio <= 2.5:
-        bar_color = "#ea580c"
-        icon_bg = "#fff7ed"
+        bar_color = "#f97316"
+        icon_bg = "rgba(249, 115, 22, 0.15)"
     else:
-        bar_color = "#dc2626"
-        icon_bg = "#fef2f2"
+        bar_color = "#ef4444"
+        icon_bg = "rgba(239, 68, 68, 0.15)"
 
     val_str = f"{int(round(val))}" if val >= 1 else f"{val:.1f}"
 
     return f"""
-    <div class="glass-card" style="border-left: 3.5px solid {bar_color}; padding: 12px 14px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="font-size: 20px; background: {icon_bg}; padding: 6px 8px; border-radius: 8px;">{icon_str}</div>
+    <div class="glass-card" style="border-left: 3.5px solid {bar_color}; padding: 14px 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="font-size: 22px; background: {icon_bg}; padding: 8px 10px; border-radius: 10px; border: 1px solid {bar_color}44;">{icon_str}</div>
             <div>
-                <div style="font-size: 13px; font-weight: 700; color: #0f291e;">{title}</div>
-                <div style="font-size: 11px; color: #64748b; font-weight: 500;">({sub_title})</div>
+                <div style="font-size: 13.5px; font-weight: 800; color: #f0fdf4;">{title}</div>
+                <div style="font-size: 11px; color: #a7f3d0; font-weight: 500;">({sub_title})</div>
             </div>
         </div>
         <div style="text-align: right;">
-            <div style="font-size: 22px; font-weight: 800; color: #0f172a; line-height: 1.1;">{val_str}</div>
-            <div style="font-size: 10.5px; color: #64748b; font-weight: 500;">{unit}</div>
+            <div style="font-size: 24px; font-weight: 900; color: #ffffff; line-height: 1.1; text-shadow: 0 0 12px rgba(52, 211, 153, 0.2);">{val_str}</div>
+            <div style="font-size: 11px; color: #6ee7b7; font-weight: 600;">{unit}</div>
         </div>
     </div>
     """
@@ -437,16 +515,16 @@ def detect_user_ip_location():
 # -------------------------------------------------------------
 # 5. GLOBAL INSTITUTIONAL HEADER & UNIVERSAL LOCATION BAR
 # -------------------------------------------------------------
-header_c1, header_c2 = st.columns([2.4, 1.2])
+header_c1, header_c2 = st.columns([2.5, 1.2])
 with header_c1:
     st.markdown("""
-    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
-        <div style="font-size: 32px;">🌿</div>
+    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 4px;">
+        <div style="font-size: 34px; filter: drop-shadow(0 0 10px rgba(52, 211, 153, 0.6));">🌿</div>
         <div>
-            <div style="font-size: 25px; font-weight: 800; letter-spacing: -0.3px; color: #064e3b; line-height: 1.15;">
-                PRAVAAH <span style="font-size: 14px; font-weight: 600; color: #0284c7;">| Atmospheric & Civic Intelligence</span>
+            <div style="font-size: 26px; font-weight: 900; letter-spacing: -0.5px; line-height: 1.15; background: linear-gradient(135deg, #ffffff 0%, #a7f3d0 50%, #34d399 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                PRAVAAH <span style="font-size: 14px; font-weight: 600; color: #6ee7b7; -webkit-text-fill-color: #6ee7b7; letter-spacing: 0.2px;">| Atmospheric & Civic Intelligence</span>
             </div>
-            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
+            <div style="font-size: 12px; color: #a7f3d0; margin-top: 3px; font-weight: 500;">
                 University of Mumbai Under-Graduate CEP &nbsp;•&nbsp; NEP 2020 Social Impact Initiative
             </div>
         </div>
@@ -455,14 +533,14 @@ with header_c1:
 with header_c2:
     st.markdown("""
     <div style="text-align: right; padding-top: 6px;">
-        <span class="badge-green"><span class="live-beacon"></span> LIVE CAAQMS FEED</span>
+        <span class="badge-green"><span class="pulse-dot"></span> LIVE CAAQMS FEED</span>
         &nbsp;
         <span class="badge-tag">CPCB NAQI</span>
     </div>
     """, unsafe_allow_html=True)
 
 # Geolocation Row
-search_row1, search_row2 = st.columns([1, 4])
+search_row1, search_row2 = st.columns([1.1, 3.8])
 with search_row1:
     if st.button("📍 Auto-Detect GPS", use_container_width=True):
         with st.spinner("Detecting current device location..."):
@@ -508,13 +586,13 @@ if live_data and live_data.get("nearest_station_dist_km", 0.0) > 0:
 
 # Selected Location Ribbon
 st.markdown(f"""
-<div class="glass-card" style="padding: 10px 16px; margin: 10px 0 16px 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-        <span style="font-size: 15px;">📍</span>
-        <span style="font-size: 14px; font-weight: 700; color: #0f291e;">{st.session_state['target_name']}</span>
-        <span style="background: #f0fdf4; color: #047857; border: 1px solid #bbf7d0; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">{st.session_state['target_lat']:.4f}° N, {st.session_state['target_lon']:.4f}° E</span>
+<div class="glass-card" style="padding: 12px 20px; margin: 10px 0 18px 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <span style="font-size: 16px; filter: drop-shadow(0 0 6px #10b981);">📍</span>
+        <span style="font-size: 15px; font-weight: 800; color: #ffffff;">{st.session_state['target_name']}</span>
+        <span style="background: rgba(16, 185, 129, 0.18); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.35); padding: 2px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;">{st.session_state['target_lat']:.4f}° N, {st.session_state['target_lon']:.4f}° E</span>
     </div>
-    <div style="font-size: 12px; color: #0284c7; font-weight: 600;">
+    <div style="font-size: 12px; color: #38bdf8; font-weight: 700;">
         {nearest_station_str}
     </div>
 </div>
@@ -556,17 +634,17 @@ with tab1:
     h_col1, h_col2 = st.columns([1.2, 2.2])
     with h_col1:
         st.markdown(f"""
-        <div class="hero-card" style="border-left: 5px solid {cat_color};">
-            <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700; letter-spacing: 0.8px;">CPCB Composite AQI</div>
-            <div style="font-size: 68px; font-weight: 900; color: #0f291e; margin: 4px 0 6px 0; letter-spacing: -1.5px; line-height: 1.0;">{aqi_val}</div>
-            <div style="background: {cat_color}18; border: 1.5px solid {cat_color}; color: {cat_color}; padding: 5px 16px; border-radius: 20px; display: inline-block; font-weight: 700; font-size: 13px;">
+        <div class="hero-card" style="border-left: 6px solid {cat_color};">
+            <div style="font-size: 11px; color: #a7f3d0; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">CPCB Composite AQI</div>
+            <div style="font-size: 72px; font-weight: 900; color: #ffffff; margin: 4px 0 6px 0; letter-spacing: -2px; line-height: 1.0; text-shadow: 0 0 24px {cat_color}66;">{aqi_val}</div>
+            <div style="background: {cat_color}22; border: 1.5px solid {cat_color}; color: {cat_color}; padding: 6px 18px; border-radius: 20px; display: inline-block; font-weight: 800; font-size: 13px; box-shadow: 0 0 16px {cat_color}33;">
                 ● {cat_name} — {clinical_adv.split('.')[0]}
             </div>
-            <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-around; font-size: 11.5px; color: #64748b;">
-                <div>Dominant: <b style="color: #0f291e;">{live_data.get('dominant_pollutant', 'PM2.5')}</b></div>
-                <div>Telemetry: <b style="color: #0284c7;">CAAQMS Ground</b></div>
+            <div style="margin-top: 18px; padding-top: 12px; border-top: 1px solid rgba(52, 211, 153, 0.15); display: flex; justify-content: space-around; font-size: 12px; color: #a7f3d0;">
+                <div>Dominant: <b style="color: #ffffff;">{live_data.get('dominant_pollutant', 'PM2.5')}</b></div>
+                <div>Telemetry: <b style="color: #38bdf8;">CAAQMS Ground</b></div>
             </div>
-            <div style="font-size: 10.5px; color: #94a3b8; margin-top: 8px;">Source: {live_data.get('source', 'CAAQMS Sensor Network')}</div>
+            <div style="font-size: 10.5px; color: #6ee7b7aa; margin-top: 8px;">Source: {live_data.get('source', 'CAAQMS Sensor Network')}</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -651,23 +729,23 @@ with tab1:
     slot1, slot2, slot3 = st.columns(3)
     with slot1:
         st.markdown("""
-        <div style="background: #fff1f2; border: 1px solid #fecdd3; border-left: 4px solid #f43f5e; border-radius: 10px; padding: 14px 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-            <div style="font-size: 12.5px; font-weight: 800; color: #be123c; letter-spacing: 0.3px;">❌ EARLY MORNING INVERSION (06:00 – 07:30 AM)</div>
-            <p style="font-size: 12px; color: #475569; margin-top: 8px; line-height: 1.5; margin-bottom: 0;"><b>High Smog Risk:</b> Nocturnal thermal inversion traps vehicular exhaust near the ground. Avoid outdoor jogging and cardio.</p>
+        <div style="background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.25); border-left: 4px solid #f43f5e; border-radius: 12px; padding: 16px 18px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
+            <div style="font-size: 12.5px; font-weight: 800; color: #fca5a5; letter-spacing: 0.3px;">❌ EARLY MORNING INVERSION (06:00 – 07:30 AM)</div>
+            <p style="font-size: 12px; color: #cbd5e1; margin-top: 8px; line-height: 1.5; margin-bottom: 0;"><b>High Smog Risk:</b> Nocturnal thermal inversion traps vehicular exhaust near the ground. Avoid outdoor jogging and cardio.</p>
         </div>
         """, unsafe_allow_html=True)
     with slot2:
         st.markdown(f"""
-        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #059669; border-radius: 10px; padding: 14px 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-            <div style="font-size: 12.5px; font-weight: 800; color: #065f46; letter-spacing: 0.3px;">✅ SAFE OUTDOOR WINDOW ({opt_start_fmt} – {opt_end_fmt})</div>
-            <p style="font-size: 12px; color: #334155; margin-top: 8px; line-height: 1.5; margin-bottom: 0;"><b>Cleanest Daily Trough (Avg AQI ~{opt_avg_aqi}):</b> Solar boundary layer height expands upward, diluting pollution. Ideal for errands & workouts.</p>
+        <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-left: 4px solid #10b981; border-radius: 12px; padding: 16px 18px; box-shadow: 0 4px 18px rgba(16, 185, 129, 0.2);">
+            <div style="font-size: 12.5px; font-weight: 800; color: #34d399; letter-spacing: 0.3px;">✅ SAFE OUTDOOR WINDOW ({opt_start_fmt} – {opt_end_fmt})</div>
+            <p style="font-size: 12px; color: #ecfdf5; margin-top: 8px; line-height: 1.5; margin-bottom: 0;"><b>Cleanest Daily Trough (Avg AQI ~{opt_avg_aqi}):</b> Solar boundary layer height expands upward, diluting pollution. Ideal for errands & workouts.</p>
         </div>
         """, unsafe_allow_html=True)
     with slot3:
         st.markdown("""
-        <div style="background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #d97706; border-radius: 10px; padding: 14px 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-            <div style="font-size: 12.5px; font-weight: 800; color: #92400e; letter-spacing: 0.3px;">❌ EVENING TRAFFIC PEAK (18:00 – 20:30 PM)</div>
-            <p style="font-size: 12px; color: #475569; margin-top: 8px; line-height: 1.5; margin-bottom: 0;"><b>Heavy Commute Smog:</b> Dense diesel emissions combined with cooling surface temperatures cause sharp particulate spikes.</p>
+        <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-left: 4px solid #f59e0b; border-radius: 12px; padding: 16px 18px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
+            <div style="font-size: 12.5px; font-weight: 800; color: #fbbf24; letter-spacing: 0.3px;">❌ EVENING TRAFFIC PEAK (18:00 – 20:30 PM)</div>
+            <p style="font-size: 12px; color: #cbd5e1; margin-top: 8px; line-height: 1.5; margin-bottom: 0;"><b>Heavy Commute Smog:</b> Dense diesel emissions combined with cooling surface temperatures cause sharp particulate spikes.</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -681,13 +759,13 @@ with tab1:
             markers=True,
             title=f"24-Hour Forecasted Hourly AQI ({st.session_state['target_name']}) — Lower = Cleaner Air"
         )
-        fig_hourly.update_traces(line_color="#0284c7", marker=dict(size=6, color="#0284c7", line=dict(width=1.5, color="#ffffff")))
+        fig_hourly.update_traces(line_color="#34d399", fill="tozeroy", fillcolor="rgba(52, 211, 153, 0.12)", marker=dict(size=7, color="#34d399", line=dict(width=1.5, color="#ffffff")))
         fig_hourly.update_layout(
-            yaxis=dict(title="Hourly AQI", gridcolor="#e2e8f0", range=[max(0, df_hourly['Hourly_AQI'].min() - 15), df_hourly['Hourly_AQI'].max() + 20]),
-            xaxis=dict(title="Hour of Day", gridcolor="#e2e8f0"),
+            yaxis=dict(title="Hourly AQI", gridcolor="rgba(52, 211, 153, 0.12)", range=[max(0, df_hourly['Hourly_AQI'].min() - 15), df_hourly['Hourly_AQI'].max() + 20]),
+            xaxis=dict(title="Hour of Day", gridcolor="rgba(52, 211, 153, 0.12)"),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#475569"),
+            font=dict(color="#a7f3d0"),
             height=260,
             margin=dict(l=20, r=20, t=35, b=20)
         )
@@ -751,19 +829,19 @@ with tab1:
 
     # 1. Primary Banner Card
     st.markdown(f"""
-    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 5px solid {sev_color}; box-shadow: 0 4px 12px rgba(6, 78, 59, 0.04); padding: 18px 20px; margin-bottom: 18px; border-radius: 12px;">
+    <div style="background: linear-gradient(135deg, rgba(13, 44, 34, 0.85) 0%, rgba(8, 30, 23, 0.9) 100%); border: 1px solid rgba(52, 211, 153, 0.25); border-left: 5px solid {sev_color}; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4); padding: 18px 22px; margin-bottom: 18px; border-radius: 14px;">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
             <div>
-                <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px;">Current Health Advisory Baseline</span>
-                <div style="font-size: 19px; font-weight: 800; color: #0f291e; margin-top: 3px;">{status_title}</div>
+                <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #a7f3d0; letter-spacing: 0.5px;">Current Health Advisory Baseline</span>
+                <div style="font-size: 20px; font-weight: 800; color: #ffffff; margin-top: 3px;">{status_title}</div>
             </div>
-            <div style="background: {sev_color}18; border: 1.5px solid {sev_color}; color: {sev_color}; font-weight: 700; font-size: 12.5px; padding: 4px 14px; border-radius: 16px;">
+            <div style="background: {sev_color}22; border: 1.5px solid {sev_color}; color: {sev_color}; font-weight: 800; font-size: 12.5px; padding: 4px 14px; border-radius: 16px; box-shadow: 0 0 12px {sev_color}33;">
                 ● AQI {aqi_val} — {cat_name}
             </div>
         </div>
-        <div style="font-size: 13px; color: #334155; margin-top: 10px; line-height: 1.55; border-top: 1px solid #f1f5f9; padding-top: 10px;">
-            <b style="color: #0f291e;">Clinical Impact:</b> {clinical_adv}<br>
-            <b style="color: #0f291e;">Immediate Action:</b> {action_adv}
+        <div style="font-size: 13px; color: #cbd5e1; margin-top: 10px; line-height: 1.55; border-top: 1px solid rgba(52, 211, 153, 0.15); padding-top: 10px;">
+            <b style="color: #a7f3d0;">Clinical Impact:</b> {clinical_adv}<br>
+            <b style="color: #a7f3d0;">Immediate Action:</b> {action_adv}
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -774,37 +852,37 @@ with tab1:
 
     with demo_c1:
         st.markdown(f"""
-        <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-top: 4px solid #0284c7; border-radius: 10px; height: 100%; padding: 14px 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+        <div style="background: rgba(13, 44, 34, 0.72); border: 1px solid rgba(52, 211, 153, 0.2); border-top: 4px solid #38bdf8; border-radius: 12px; height: 100%; padding: 16px 14px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
             <div style="font-size: 22px; margin-bottom: 4px;">🏃</div>
-            <div style="font-size: 13.5px; font-weight: 800; color: #0369a1; margin-bottom: 4px;">Athletes & Fitness</div>
-            <div style="font-size: 11.5px; color: #334155; line-height: 1.5;">{adv_fitness}</div>
+            <div style="font-size: 14px; font-weight: 800; color: #38bdf8; margin-bottom: 4px;">Athletes & Fitness</div>
+            <div style="font-size: 12px; color: #cbd5e1; line-height: 1.5;">{adv_fitness}</div>
         </div>
         """, unsafe_allow_html=True)
 
     with demo_c2:
         st.markdown(f"""
-        <div style="background: #fefce8; border: 1px solid #fef08a; border-top: 4px solid #d97706; border-radius: 10px; height: 100%; padding: 14px 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+        <div style="background: rgba(13, 44, 34, 0.72); border: 1px solid rgba(52, 211, 153, 0.2); border-top: 4px solid #fbbf24; border-radius: 12px; height: 100%; padding: 16px 14px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
             <div style="font-size: 22px; margin-bottom: 4px;">🎒</div>
-            <div style="font-size: 13.5px; font-weight: 800; color: #92400e; margin-bottom: 4px;">Children & Schools</div>
-            <div style="font-size: 11.5px; color: #334155; line-height: 1.5;">{adv_children}</div>
+            <div style="font-size: 14px; font-weight: 800; color: #fbbf24; margin-bottom: 4px;">Children & Schools</div>
+            <div style="font-size: 12px; color: #cbd5e1; line-height: 1.5;">{adv_children}</div>
         </div>
         """, unsafe_allow_html=True)
 
     with demo_c3:
         st.markdown(f"""
-        <div style="background: #fff1f2; border: 1px solid #fecdd3; border-top: 4px solid #e11d48; border-radius: 10px; height: 100%; padding: 14px 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+        <div style="background: rgba(13, 44, 34, 0.72); border: 1px solid rgba(52, 211, 153, 0.2); border-top: 4px solid #f87171; border-radius: 12px; height: 100%; padding: 16px 14px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
             <div style="font-size: 22px; margin-bottom: 4px;">🫁</div>
-            <div style="font-size: 13.5px; font-weight: 800; color: #be123c; margin-bottom: 4px;">Sensitive & Elderly</div>
-            <div style="font-size: 11.5px; color: #334155; line-height: 1.5;">{adv_sensitive}</div>
+            <div style="font-size: 14px; font-weight: 800; color: #f87171; margin-bottom: 4px;">Sensitive & Elderly</div>
+            <div style="font-size: 12px; color: #cbd5e1; line-height: 1.5;">{adv_sensitive}</div>
         </div>
         """, unsafe_allow_html=True)
 
     with demo_c4:
         st.markdown(f"""
-        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-top: 4px solid #059669; border-radius: 10px; height: 100%; padding: 14px 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+        <div style="background: rgba(13, 44, 34, 0.72); border: 1px solid rgba(52, 211, 153, 0.2); border-top: 4px solid #34d399; border-radius: 12px; height: 100%; padding: 16px 14px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
             <div style="font-size: 22px; margin-bottom: 4px;">🛵</div>
-            <div style="font-size: 13.5px; font-weight: 800; color: #065f46; margin-bottom: 4px;">Commuters & Drivers</div>
-            <div style="font-size: 11.5px; color: #334155; line-height: 1.5;">{adv_commuters}</div>
+            <div style="font-size: 14px; font-weight: 800; color: #34d399; margin-bottom: 4px;">Commuters & Drivers</div>
+            <div style="font-size: 12px; color: #cbd5e1; line-height: 1.5;">{adv_commuters}</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -814,9 +892,9 @@ with tab1:
 
     with prot_c1:
         st.markdown(f"""
-        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #059669; border-radius: 10px; padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-            <div style="font-size: 13.5px; font-weight: 800; color: #065f46; margin-bottom: 6px;">🏠 Household & Indoor Air Management</div>
-            <div style="font-size: 12px; color: #334155; line-height: 1.6;">
+        <div style="background: rgba(13, 44, 34, 0.72); border: 1px solid rgba(52, 211, 153, 0.25); border-left: 4px solid #10b981; border-radius: 12px; padding: 18px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
+            <div style="font-size: 14px; font-weight: 800; color: #34d399; margin-bottom: 6px;">🏠 Household & Indoor Air Management</div>
+            <div style="font-size: 12px; color: #cbd5e1; line-height: 1.6;">
                 • <b>Window Ventilation:</b> {adv_indoor}<br>
                 • <b>Air Purification:</b> Keep True HEPA filters running in active living areas & bedrooms.<br>
                 • <b>Avoid Indoor Pollution:</b> Refrain from burning incense sticks, candles, or indoor frying during high AQI alerts.<br>
@@ -827,9 +905,9 @@ with tab1:
 
     with prot_c2:
         st.markdown(f"""
-        <div style="background: #fefce8; border: 1px solid #fef08a; border-left: 4px solid #d97706; border-radius: 10px; padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-            <div style="font-size: 13.5px; font-weight: 800; color: #92400e; margin-bottom: 6px;">🫗 Physiological Defense & Hydration</div>
-            <div style="font-size: 12px; color: #334155; line-height: 1.6;">
+        <div style="background: rgba(13, 44, 34, 0.72); border: 1px solid rgba(52, 211, 153, 0.25); border-left: 4px solid #f59e0b; border-radius: 12px; padding: 18px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
+            <div style="font-size: 14px; font-weight: 800; color: #fbbf24; margin-bottom: 6px;">🫗 Physiological Defense & Hydration</div>
+            <div style="font-size: 12px; color: #cbd5e1; line-height: 1.6;">
                 • <b>Hydration Target:</b> Drink 2.5–3 liters of warm water daily to flush absorbed particulate toxins.<br>
                 • <b>Herbal Respiratory Decoction:</b> Sip warm tea brewed with ginger, turmeric, tulsi (holy basil), and black pepper.<br>
                 • <b>Steam Inhalation:</b> Perform 5 minutes of steam inhalation before sleep to clear upper airway congestion.<br>
@@ -875,33 +953,33 @@ with tab2:
             p_cat, p_col, _, _ = get_cpcb_category(pred_v)
             diff = pred_v - prev_aqi
             if diff < 0:
-                arrow_str = f'<span style="color:#059669; font-size:11px; font-weight:700;">↓ {abs(diff)} (Improving)</span>'
+                arrow_str = f'<span style="color:#34d399; font-size:11px; font-weight:800;">↓ {abs(diff)} (Improving)</span>'
             elif diff > 0:
-                arrow_str = f'<span style="color:#dc2626; font-size:11px; font-weight:700;">↑ +{diff} (Worsening)</span>'
+                arrow_str = f'<span style="color:#f87171; font-size:11px; font-weight:800;">↑ +{diff} (Worsening)</span>'
             else:
-                arrow_str = '<span style="color:#64748b; font-size:11px; font-weight:700;">● 0 (Stable)</span>'
+                arrow_str = '<span style="color:#94a3b8; font-size:11px; font-weight:700;">● 0 (Stable)</span>'
             prev_aqi = pred_v
 
             with cols[i]:
                 st.markdown(
-                    f"""<div style="background: #ffffff; border: 1px solid #e2e8f0; border-top: 4px solid {p_col}; border-radius: 10px; text-align: center; padding: 12px 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-                        <div style="font-size: 11px; color: #64748b; font-weight: 700;">{row['Date']}</div>
-                        <div style="font-size: 24px; font-weight: 900; color: #0f291e; margin: 4px 0;">{pred_v}</div>
+                    f"""<div style="background: rgba(13, 44, 34, 0.72); border: 1px solid rgba(52, 211, 153, 0.22); border-top: 4.5px solid {p_col}; border-radius: 12px; text-align: center; padding: 14px 8px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
+                        <div style="font-size: 11px; color: #a7f3d0; font-weight: 700;">{row['Date']}</div>
+                        <div style="font-size: 26px; font-weight: 900; color: #ffffff; margin: 4px 0; text-shadow: 0 0 12px rgba(52, 211, 153, 0.2);">{pred_v}</div>
                         <div style="margin-bottom: 6px;">{arrow_str}</div>
-                        <div style="background: {p_col}18; border: 1px solid {p_col}55; color: {p_col}; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 2px 8px; display: inline-block;">{p_cat}</div>
+                        <div style="background: {p_col}22; border: 1px solid {p_col}77; color: {p_col}; font-size: 10px; font-weight: 800; border-radius: 10px; padding: 3px 8px; display: inline-block;">{p_cat}</div>
                     </div>""",
                     unsafe_allow_html=True
                 )
 
         # Plotly Area Chart
         fig_traj = px.area(f_df, x="Date", y="Predicted_AQI", markers=True, text="Predicted_AQI", title=f"Projected AQI Trajectory ({selected_fc_city})")
-        fig_traj.update_traces(line_color="#0284c7", fillcolor="rgba(2, 132, 199, 0.08)", marker=dict(size=7, color="#0284c7", line=dict(width=1.5, color="#ffffff")), textposition="top center")
+        fig_traj.update_traces(line_color="#10b981", fillcolor="rgba(16, 185, 129, 0.18)", marker=dict(size=7, color="#34d399", line=dict(width=1.5, color="#ffffff")), textposition="top center")
         fig_traj.update_layout(
-            yaxis=dict(title="CPCB Composite AQI", gridcolor="#e2e8f0", range=[max(0, f_df['Predicted_AQI'].min() - 25), f_df['Predicted_AQI'].max() + 35]),
-            xaxis=dict(title=None, gridcolor="#e2e8f0"),
+            yaxis=dict(title="CPCB Composite AQI", gridcolor="rgba(52, 211, 153, 0.12)", range=[max(0, f_df['Predicted_AQI'].min() - 25), f_df['Predicted_AQI'].max() + 35]),
+            xaxis=dict(title=None, gridcolor="rgba(52, 211, 153, 0.12)"),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#475569"),
+            font=dict(color="#a7f3d0"),
             height=300,
             margin=dict(l=10, r=10, t=35, b=10)
         )
@@ -915,23 +993,23 @@ with tab2:
         w_col1, w_col2, w_col3 = st.columns(3)
         with w_col1:
             st.markdown("""
-            <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-left: 4px solid #0284c7; border-radius: 10px; padding: 14px 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-                <div style="font-size: 13.5px; font-weight: 800; color: #0369a1;">💨 Wind Speed & Ventilation</div>
-                <p style="font-size: 12px; color: #334155; margin-top: 6px; line-height: 1.5; margin-bottom: 0;">Breezy coastal and land winds carry vehicle smoke away quickly, keeping air cleaner. Low wind speed traps exhaust near ground level.</p>
+            <div style="background: rgba(13, 44, 34, 0.72); border: 1px solid rgba(52, 211, 153, 0.2); border-left: 4px solid #38bdf8; border-radius: 12px; padding: 16px 18px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
+                <div style="font-size: 14px; font-weight: 800; color: #38bdf8;">💨 Wind Speed & Ventilation</div>
+                <p style="font-size: 12px; color: #cbd5e1; margin-top: 6px; line-height: 1.5; margin-bottom: 0;">Breezy coastal and land winds carry vehicle smoke away quickly, keeping air cleaner. Low wind speed traps exhaust near ground level.</p>
             </div>
             """, unsafe_allow_html=True)
         with w_col2:
             st.markdown("""
-            <div style="background: #fefce8; border: 1px solid #fef08a; border-left: 4px solid #d97706; border-radius: 10px; padding: 14px 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-                <div style="font-size: 13.5px; font-weight: 800; color: #92400e;">💧 Morning Humidity & Fog</div>
-                <p style="font-size: 12px; color: #334155; margin-top: 6px; line-height: 1.5; margin-bottom: 0;">High morning humidity combined with cool temperatures binds dust and combustion particles into dense smog layers until mid-day sun warms the air.</p>
+            <div style="background: rgba(13, 44, 34, 0.72); border: 1px solid rgba(52, 211, 153, 0.2); border-left: 4px solid #fbbf24; border-radius: 12px; padding: 16px 18px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
+                <div style="font-size: 14px; font-weight: 800; color: #fbbf24;">💧 Morning Humidity & Fog</div>
+                <p style="font-size: 12px; color: #cbd5e1; margin-top: 6px; line-height: 1.5; margin-bottom: 0;">High morning humidity combined with cool temperatures binds dust and combustion particles into dense smog layers until mid-day sun warms the air.</p>
             </div>
             """, unsafe_allow_html=True)
         with w_col3:
             st.markdown("""
-            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #059669; border-radius: 10px; padding: 14px 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-                <div style="font-size: 13.5px; font-weight: 800; color: #065f46;">☀️ Solar Mixing Layer</div>
-                <p style="font-size: 12px; color: #334155; margin-top: 6px; line-height: 1.5; margin-bottom: 0;">Afternoon sunlight expands the atmospheric boundary layer upward, creating the cleanest daily window for outdoor errands and exercise.</p>
+            <div style="background: rgba(13, 44, 34, 0.72); border: 1px solid rgba(52, 211, 153, 0.2); border-left: 4px solid #34d399; border-radius: 12px; padding: 16px 18px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
+                <div style="font-size: 14px; font-weight: 800; color: #34d399;">☀️ Solar Mixing Layer</div>
+                <p style="font-size: 12px; color: #cbd5e1; margin-top: 6px; line-height: 1.5; margin-bottom: 0;">Afternoon sunlight expands the atmospheric boundary layer upward, creating the cleanest daily window for outdoor errands and exercise.</p>
             </div>
             """, unsafe_allow_html=True)
 
@@ -952,26 +1030,26 @@ with tab3:
     spot1, spot2, spot3 = st.columns(3)
     with spot1:
         st.markdown(f"""
-        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #059669; border-radius: 10px; padding: 14px 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-            <div style="font-size: 11px; color: #065f46; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">NATIONWIDE CLEANEST STATION</div>
-            <div style="font-size: 20px; font-weight: 900; color: #0f291e; margin: 4px 0;">{cleanest['City']}</div>
-            <div style="font-size: 13px; color: #059669; font-weight: 700;">● AQI {cleanest['AQI']} ({cleanest['Status']})</div>
+        <div style="background: rgba(13, 44, 34, 0.72); border: 1px solid rgba(52, 211, 153, 0.25); border-left: 4.5px solid #10b981; border-radius: 12px; padding: 16px 18px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
+            <div style="font-size: 11px; color: #a7f3d0; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">NATIONWIDE CLEANEST STATION</div>
+            <div style="font-size: 22px; font-weight: 900; color: #ffffff; margin: 4px 0; text-shadow: 0 0 12px rgba(52, 211, 153, 0.25);">{cleanest['City']}</div>
+            <div style="font-size: 13px; color: #34d399; font-weight: 800;">● AQI {cleanest['AQI']} ({cleanest['Status']})</div>
         </div>
         """, unsafe_allow_html=True)
     with spot2:
         st.markdown(f"""
-        <div style="background: #fff1f2; border: 1px solid #fecdd3; border-left: 4px solid #e11d48; border-radius: 10px; padding: 14px 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-            <div style="font-size: 11px; color: #be123c; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">HIGHEST SMOG CONCENTRATION</div>
-            <div style="font-size: 20px; font-weight: 900; color: #0f291e; margin: 4px 0;">{dirtiest['City']}</div>
-            <div style="font-size: 13px; color: #e11d48; font-weight: 700;">● AQI {dirtiest['AQI']} ({dirtiest['Status']})</div>
+        <div style="background: rgba(13, 44, 34, 0.72); border: 1px solid rgba(239, 68, 68, 0.25); border-left: 4.5px solid #ef4444; border-radius: 12px; padding: 16px 18px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
+            <div style="font-size: 11px; color: #fca5a5; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">HIGHEST SMOG CONCENTRATION</div>
+            <div style="font-size: 22px; font-weight: 900; color: #ffffff; margin: 4px 0; text-shadow: 0 0 12px rgba(239, 68, 68, 0.25);">{dirtiest['City']}</div>
+            <div style="font-size: 13px; color: #f87171; font-weight: 800;">● AQI {dirtiest['AQI']} ({dirtiest['Status']})</div>
         </div>
         """, unsafe_allow_html=True)
     with spot3:
         st.markdown(f"""
-        <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-left: 4px solid #0284c7; border-radius: 10px; padding: 14px 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-            <div style="font-size: 11px; color: #0369a1; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">ACTIVE CAAQMS MONITORS</div>
-            <div style="font-size: 20px; font-weight: 900; color: #0f291e; margin: 4px 0;">{len(national_df)} Stations Tracked</div>
-            <div style="font-size: 13px; color: #0284c7; font-weight: 700;">● Pan-India Live Ingestion</div>
+        <div style="background: rgba(13, 44, 34, 0.72); border: 1px solid rgba(56, 189, 248, 0.25); border-left: 4.5px solid #38bdf8; border-radius: 12px; padding: 16px 18px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
+            <div style="font-size: 11px; color: #bae6fd; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">ACTIVE CAAQMS MONITORS</div>
+            <div style="font-size: 22px; font-weight: 900; color: #ffffff; margin: 4px 0;">{len(national_df)} Stations Tracked</div>
+            <div style="font-size: 13px; color: #38bdf8; font-weight: 800;">● Pan-India Live Ingestion</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -1010,9 +1088,9 @@ with tab3:
                 "center": {"lat": 22.5937, "lon": 78.9629}
             }
             if map_func == getattr(px, "scatter_map", None):
-                map_kwargs["map_style"] = "carto-positron"
+                map_kwargs["map_style"] = "carto-darkmatter"
             else:
-                map_kwargs["mapbox_style"] = "carto-positron"
+                map_kwargs["mapbox_style"] = "carto-darkmatter"
                 
             fig_map = map_func(**map_kwargs)
             fig_map.update_layout(margin=dict(l=0, r=0, t=0, b=0), height=480)
@@ -1046,38 +1124,38 @@ with tab4:
     c1_c1, c1_c2, c1_c3 = st.columns([2, 1, 1])
     with c1_c1:
         st.markdown(f"""
-        <div style="background: #fff1f2; border: 1px solid #fecdd3; border-left: 4px solid #e11d48; border-radius: 10px; padding: 16px 18px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+        <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-left: 4.5px solid #ef4444; border-radius: 12px; padding: 18px 20px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
             <div style="display: flex; align-items: center; justify-content: space-between;">
                 <div>
-                    <div style="font-size: 11px; color: #be123c; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Ambient Particulate Inhalation</div>
-                    <div style="font-size: 34px; font-weight: 900; color: #e11d48; line-height: 1.1; margin-top: 4px;">
-                        {daily_cigs_loc} <span style="font-size: 14px; color: #9f1239; font-weight: 600;">Cigarettes / day</span>
+                    <div style="font-size: 11px; color: #fca5a5; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">Ambient Particulate Inhalation</div>
+                    <div style="font-size: 36px; font-weight: 900; color: #f87171; line-height: 1.1; margin-top: 4px; text-shadow: 0 0 16px rgba(239, 68, 68, 0.3);">
+                        {daily_cigs_loc} <span style="font-size: 14px; color: #fca5a5; font-weight: 600;">Cigarettes / day</span>
                     </div>
                 </div>
-                <div style="font-size: 36px;">🚬</div>
+                <div style="font-size: 38px; filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.4));">🚬</div>
             </div>
-            <div style="font-size: 13px; color: #1e293b; margin-top: 10px; font-weight: 500; line-height: 1.5;">
+            <div style="font-size: 13px; color: #ecfdf5; margin-top: 10px; font-weight: 500; line-height: 1.5;">
                 Breathing the ambient air in <b>{target_city_name}</b> is equivalent to smoking <b>{daily_cigs_loc}</b> cigarettes daily.
             </div>
-            <div style="font-size: 11px; color: #64748b; margin-top: 8px; border-top: 1px solid #fecdd3; padding-top: 6px;">
+            <div style="font-size: 11px; color: #94a3b8; margin-top: 8px; border-top: 1px solid rgba(239, 68, 68, 0.2); padding-top: 6px;">
                 Reference Model: <i>Berkeley Earth Particulate Exposure (22 µg/m³ PM2.5 ≈ 1 cigarette)</i>
             </div>
         </div>
         """, unsafe_allow_html=True)
     with c1_c2:
         st.markdown(f"""
-        <div style="background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #d97706; border-radius: 10px; text-align: center; padding: 16px 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-            <div style="font-size: 11px; color: #92400e; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Weekly Cumulative</div>
-            <div style="font-size: 26px; font-weight: 900; color: #d97706; margin: 4px 0;">{weekly_cigs_loc}</div>
-            <div style="font-size: 11.5px; color: #475569; font-weight: 600;">Cigarettes / Week</div>
+        <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-left: 4.5px solid #f59e0b; border-radius: 12px; text-align: center; padding: 18px 12px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
+            <div style="font-size: 11px; color: #fbbf24; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Weekly Cumulative</div>
+            <div style="font-size: 28px; font-weight: 900; color: #fbbf24; margin: 4px 0; text-shadow: 0 0 12px rgba(245, 158, 11, 0.25);">{weekly_cigs_loc}</div>
+            <div style="font-size: 11.5px; color: #cbd5e1; font-weight: 600;">Cigarettes / Week</div>
         </div>
         """, unsafe_allow_html=True)
     with c1_c3:
         st.markdown(f"""
-        <div style="background: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #ea580c; border-radius: 10px; text-align: center; padding: 16px 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-            <div style="font-size: 11px; color: #9a3412; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Monthly Cumulative</div>
-            <div style="font-size: 26px; font-weight: 900; color: #ea580c; margin: 4px 0;">{monthly_cigs_loc}</div>
-            <div style="font-size: 11.5px; color: #475569; font-weight: 600;">Cigarettes / Month</div>
+        <div style="background: rgba(249, 115, 22, 0.08); border: 1px solid rgba(249, 115, 22, 0.25); border-left: 4.5px solid #f97316; border-radius: 12px; text-align: center; padding: 18px 12px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
+            <div style="font-size: 11px; color: #fb923c; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Monthly Cumulative</div>
+            <div style="font-size: 28px; font-weight: 900; color: #fb923c; margin: 4px 0; text-shadow: 0 0 12px rgba(249, 115, 22, 0.25);">{monthly_cigs_loc}</div>
+            <div style="font-size: 11.5px; color: #cbd5e1; font-weight: 600;">Cigarettes / Month</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -1099,24 +1177,24 @@ with tab4:
 
     if sol_choice == "Air Purifier":
         sol_desc = f"As per current AQI level of <b>{aqi_val}</b> ({cat_name}) in {target_city_name}, keep indoor air purifiers equipped with True HEPA filters turned ON in active bedrooms and living spaces."
-        sol_badge = f"<span style='background:#f0f9ff; color:#0284c7; border:1px solid #bae6fd; padding:3px 10px; border-radius:6px; font-weight:700; font-size:11px;'>{ap_status}</span>"
+        sol_badge = f"<span style='background:rgba(56, 189, 248, 0.16); color:#38bdf8; border:1px solid rgba(56, 189, 248, 0.35); padding:4px 12px; border-radius:8px; font-weight:800; font-size:11px;'>{ap_status}</span>"
     elif sol_choice == "Car Cabin Filter":
         sol_desc = f"As per current AQI level of <b>{aqi_val}</b> in {target_city_name}, drivers and commuters must use car cabin filters (HEPA/Activated Carbon) inside their vehicle and keep air ventilation in Recirculation mode."
-        sol_badge = f"<span style='background:#fefce8; color:#d97706; border:1px solid #fef08a; padding:3px 10px; border-radius:6px; font-weight:700; font-size:11px;'>{cf_status}</span>"
+        sol_badge = f"<span style='background:rgba(245, 158, 11, 0.16); color:#fbbf24; border:1px solid rgba(245, 158, 11, 0.35); padding:4px 12px; border-radius:8px; font-weight:800; font-size:11px;'>{cf_status}</span>"
     elif sol_choice == "N95 Mask":
         sol_desc = f"As per current pollution levels in {target_city_name}, certified N95 or FFP2 masks are required for outdoor travel or open-cabin commuting. Cloth masks filter less than 15% of fine PM2.5."
-        sol_badge = f"<span style='background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; padding:3px 10px; border-radius:6px; font-weight:700; font-size:11px;'>{n95_status}</span>"
+        sol_badge = f"<span style='background:rgba(239, 68, 68, 0.16); color:#f87171; border:1px solid rgba(239, 68, 68, 0.35); padding:4px 12px; border-radius:8px; font-weight:800; font-size:11px;'>{n95_status}</span>"
     else:
         sol_desc = f"With AQI at <b>{aqi_val}</b> in {target_city_name}, sensitive individuals (children, elderly, asthma patients) must limit outdoor morning walks and avoid strenuous outdoor exercise near high-traffic corridors."
-        sol_badge = f"<span style='background:#f0fdf4; color:#059669; border:1px solid #bbf7d0; padding:3px 10px; border-radius:6px; font-weight:700; font-size:11px;'>{si_status}</span>"
+        sol_badge = f"<span style='background:rgba(16, 185, 129, 0.16); color:#34d399; border:1px solid rgba(52, 211, 153, 0.35); padding:4px 12px; border-radius:8px; font-weight:800; font-size:11px;'>{si_status}</span>"
 
     st.markdown(f"""
-    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #0284c7; border-radius: 10px; margin-top: 10px; padding: 14px 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+    <div style="background: rgba(13, 44, 34, 0.75); border: 1px solid rgba(52, 211, 153, 0.25); border-left: 4.5px solid #10b981; border-radius: 12px; margin-top: 10px; padding: 16px 20px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div style="font-size:14px; font-weight:800; color:#0f291e;">{sol_choice} Action Directive</div>
+            <div style="font-size:14.5px; font-weight:800; color:#ffffff;">{sol_choice} Action Directive</div>
             <div>{sol_badge}</div>
         </div>
-        <div style="font-size:12.5px; color:#334155; margin-top:6px; line-height:1.5;">
+        <div style="font-size:12.5px; color:#cbd5e1; margin-top:6px; line-height:1.5;">
             {sol_desc}
         </div>
     </div>
@@ -1321,15 +1399,15 @@ with tab4:
     with c_left:
         illustration_svg = CONDITION_ILLUSTRATIONS.get(cond_choice, "")
         st.markdown(f"""
-        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-top: 4px solid {risk_badge_border}; border-radius: 10px; padding: 20px 16px; text-align: center; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 12px; min-height: 110px;">
+        <div style="background: rgba(13, 44, 34, 0.75); border: 1px solid rgba(52, 211, 153, 0.22); border-top: 4.5px solid {risk_badge_border}; border-radius: 14px; padding: 22px 18px; text-align: center; margin-bottom: 12px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 12px; min-height: 110px; filter: drop-shadow(0 0 12px rgba(52, 211, 153, 0.2));">
                 {illustration_svg}
             </div>
-            <div style="font-size: 16px; font-weight: 800; color: #0f291e; margin-bottom: 8px;">{info['title']}</div>
-            <div style="background: {risk_badge_bg}; border: 1.5px solid {risk_badge_border}; color: {risk_badge_text}; padding: 4px 14px; border-radius: 14px; font-weight: 700; font-size: 11.5px; display: inline-block;">
+            <div style="font-size: 16px; font-weight: 800; color: #ffffff; margin-bottom: 8px;">{info['title']}</div>
+            <div style="background: {risk_badge_bg}; border: 1.5px solid {risk_badge_border}; color: {risk_badge_text}; padding: 4px 14px; border-radius: 14px; font-weight: 800; font-size: 11.5px; display: inline-block; box-shadow: 0 0 12px {risk_badge_border}33;">
                 ● {risk_level} Risk Level
             </div>
-            <div style="font-size: 12px; color: #475569; margin-top: 10px; line-height: 1.5;">
+            <div style="font-size: 12px; color: #cbd5e1; margin-top: 10px; line-height: 1.5;">
                 Risk of <b>{info['title']}</b> symptoms is <b>{risk_level}</b> when ambient AQI is <b>{cat_name} ({aqi_val})</b>.
             </div>
         </div>
@@ -1337,17 +1415,17 @@ with tab4:
 
     with c_right:
         st.markdown(f"#### **{info['title']}**")
-        st.markdown(f"<div style='font-size:12.5px; color:#334155; margin-bottom:12px;'>Risk of <b style='color:#0f291e;'>{info['title']}</b> symptoms is <b style='color:{risk_badge_border};'>{risk_level}</b> when AQI is <b>{cat_name} ({aqi_val})</b> &nbsp;—&nbsp; <span style='color:#64748b;'>{info['symptoms']}</span></div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-size:12.5px; color:#cbd5e1; margin-bottom:12px;'>Risk of <b style='color:#ffffff;'>{info['title']}</b> symptoms is <b style='color:{risk_badge_border};'>{risk_level}</b> when AQI is <b>{cat_name} ({aqi_val})</b> &nbsp;—&nbsp; <span style='color:#a7f3d0;'>{info['symptoms']}</span></div>", unsafe_allow_html=True)
         
         d_col1, d_col2 = st.columns(2)
         with d_col1:
-            st.markdown("<div style='font-size:13.5px; font-weight:800; color:#059669; margin-bottom:8px;'>Do's :</div>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size:14px; font-weight:800; color:#34d399; margin-bottom:8px;'>Do's :</div>", unsafe_allow_html=True)
             for do_item in info["dos"]:
-                st.markdown(f"<div style='font-size:12px; color:#1e293b; margin-bottom:6px; line-height:1.45;'><b style='color:#059669;'>✓</b> {do_item}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='font-size:12px; color:#ecfdf5; margin-bottom:6px; line-height:1.45;'><b style='color:#34d399;'>✓</b> {do_item}</div>", unsafe_allow_html=True)
         with d_col2:
-            st.markdown("<div style='font-size:13.5px; font-weight:800; color:#dc2626; margin-bottom:8px;'>Don'ts :</div>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size:14px; font-weight:800; color:#f87171; margin-bottom:8px;'>Don'ts :</div>", unsafe_allow_html=True)
             for dont_item in info["donts"]:
-                st.markdown(f"<div style='font-size:12px; color:#1e293b; margin-bottom:6px; line-height:1.45;'><b style='color:#dc2626;'>✕</b> {dont_item}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='font-size:12px; color:#ecfdf5; margin-bottom:6px; line-height:1.45;'><b style='color:#f87171;'>✕</b> {dont_item}</div>", unsafe_allow_html=True)
 
     st.markdown("---")
 
@@ -1508,12 +1586,27 @@ if tab5 is not None:
                 st.markdown("#### 📈 Citizen Symptom Surge Logs")
                 df_s = get_symptom_distribution()
                 if not df_s.empty:
-                    fig_s = px.pie(df_s, names="symptom", values="count", title="Reported Symptoms Distribution", hole=0.4)
+                    fig_s = px.pie(
+                        df_s, 
+                        names="symptom", 
+                        values="count", 
+                        title="Reported Symptoms Distribution", 
+                        hole=0.45,
+                        color_discrete_sequence=["#10b981", "#34d399", "#38bdf8", "#06b6d4", "#6ee7b7", "#059669"]
+                    )
+                    fig_s.update_traces(
+                        textinfo="percent+label", 
+                        textfont=dict(color="#f8fafc", size=11, family="Plus Jakarta Sans, sans-serif"),
+                        marker=dict(line=dict(color="#04140e", width=2))
+                    )
                     fig_s.update_layout(
                         paper_bgcolor="rgba(0,0,0,0)",
                         plot_bgcolor="rgba(0,0,0,0)",
-                        font=dict(color="#475569"),
-                        height=280
+                        font=dict(color="#94a3b8", family="Plus Jakarta Sans, sans-serif"),
+                        title_font=dict(color="#f8fafc", size=14, family="Plus Jakarta Sans, sans-serif"),
+                        showlegend=False,
+                        height=280,
+                        margin=dict(l=10, r=10, t=40, b=10)
                     )
                     st.plotly_chart(fig_s, use_container_width=True, config={"displayModeBar": False, "responsive": True})
                 else:
@@ -1544,15 +1637,21 @@ if tab5 is not None:
                 m_info = st.session_state.get("latest_model_metrics", {"r2_score": 0.88, "mae": 12.4})
                 fc_city = st.session_state.get("latest_fc_city", "Mumbai")
                 st.markdown(f"""
-                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #0284c7; border-radius: 10px; padding: 18px 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-                    <div style="font-size: 11px; color: #0284c7; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">MODEL VALIDATION SPECS ({fc_city})</div>
-                    <div style="font-size: 20px; font-weight: 900; color: #0f291e; margin-top: 6px;">R² Score: 0.88 &nbsp; <span style="background: #f0fdf4; color: #059669; border: 1px solid #bbf7d0; font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 700;">Validated</span></div>
-                    <div style="font-size: 13.5px; font-weight: 700; color: #334155; margin-top: 4px;">Mean Absolute Error (MAE): ±12.4 AQI Units</div>
-                    <hr style="border-color: #f1f5f9; margin: 12px 0;">
-                    <div style="font-size: 12px; color: #475569; line-height: 1.6;">
-                        • <b>Ensemble Architecture:</b> Hybrid Gradient Boosting (60%) + Random Forest (40%)<br>
-                        • <b>Train/Test Split:</b> 80% Chronological / 20% Out-of-Sample<br>
-                        • <b>Ground Telemetry Baseline:</b> CAAQMS Sensor Baseline (CPCB Standard)
+                <div class="pravaah-card" style="border-left: 4px solid #10b981; padding: 22px; height: 100%;">
+                    <div style="font-size: 11px; color: #34d399; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 6px;">
+                        <span class="live-dot" style="width: 7px; height: 7px;"></span>
+                        MODEL VALIDATION SPECS ({fc_city})
+                    </div>
+                    <div style="font-size: 22px; font-weight: 900; color: #f8fafc; margin-top: 8px; display: flex; align-items: center; gap: 10px;">
+                        R² Score: 0.88 
+                        <span style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.4); font-size: 11px; padding: 3px 10px; border-radius: 999px; font-weight: 800; letter-spacing: 0.5px;">✓ Validated</span>
+                    </div>
+                    <div style="font-size: 13.5px; font-weight: 700; color: #a7f3d0; margin-top: 6px;">Mean Absolute Error (MAE): ±12.4 AQI Units</div>
+                    <div style="height: 1px; background: rgba(52, 211, 153, 0.15); margin: 14px 0;"></div>
+                    <div style="font-size: 12px; color: #cbd5e1; line-height: 1.7;">
+                        • <b style="color: #ecfdf5;">Ensemble Architecture:</b> Hybrid Gradient Boosting (60%) + Random Forest (40%)<br>
+                        • <b style="color: #ecfdf5;">Train/Test Split:</b> 80% Chronological / 20% Out-of-Sample<br>
+                        • <b style="color: #ecfdf5;">Ground Telemetry Baseline:</b> CAAQMS Sensor Baseline (CPCB Standard)
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -1570,27 +1669,44 @@ if tab5 is not None:
                     title="Explainable AI (XAI) Feature Importance Contributions (%)",
                     text_auto=".1f"
                 )
-                fig_xai.update_traces(marker_color="#0284c7")
+                fig_xai.update_traces(
+                    marker=dict(
+                        color="#10b981",
+                        line=dict(color="#34d399", width=1.5)
+                    ),
+                    textfont=dict(color="#ffffff", size=11, family="Plus Jakarta Sans, sans-serif"),
+                    textposition="inside"
+                )
                 fig_xai.update_layout(
-                    xaxis=dict(title="Relative Importance Weight (%)", gridcolor="#e2e8f0"),
-                    yaxis=dict(title=None),
+                    xaxis=dict(
+                        title=dict(text="Relative Importance Weight (%)", font=dict(color="#94a3b8", size=11)),
+                        gridcolor="rgba(255,255,255,0.08)",
+                        tickfont=dict(color="#94a3b8", size=10)
+                    ),
+                    yaxis=dict(
+                        title=None,
+                        tickfont=dict(color="#e2e8f0", size=11, weight="bold")
+                    ),
                     paper_bgcolor="rgba(0,0,0,0)",
                     plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(color="#475569"),
+                    font=dict(color="#94a3b8", family="Plus Jakarta Sans, sans-serif"),
+                    title_font=dict(color="#f8fafc", size=14, family="Plus Jakarta Sans, sans-serif"),
                     height=240,
-                    margin=dict(l=10, r=10, t=30, b=10)
+                    margin=dict(l=10, r=10, t=35, b=10)
                 )
                 st.plotly_chart(fig_xai, use_container_width=True, config={"displayModeBar": False, "responsive": True})
 
             st.markdown("#### 📑 Field Calibration & Survey Evidence Summary")
             st.markdown("""
-            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #059669; border-radius: 10px; padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-                <div style="font-size: 13.5px; font-weight: 800; color: #065f46;">University of Mumbai CEP Empirical Field Integration:</div>
-                <p style="font-size: 12px; color: #334155; margin-top: 6px; line-height: 1.6; margin-bottom: 0;">
+            <div class="pravaah-card" style="border-left: 4px solid #10b981; padding: 20px 24px; margin-top: 14px;">
+                <div style="font-size: 14px; font-weight: 800; color: #34d399; letter-spacing: 0.3px; display: flex; align-items: center; gap: 8px;">
+                    <span>🏛️</span> University of Mumbai CEP Empirical Field Integration
+                </div>
+                <p style="font-size: 12.5px; color: #cbd5e1; margin-top: 8px; line-height: 1.7; margin-bottom: 0;">
                     Our predictive intake models link empirical survey findings (N=150 transit workers) directly to physical particulate exposure calculations:
-                    <br>• <b>Shift Exposure Factor:</b> 8-12 hour open-cabin auto-rickshaw shifts experience 3.4x higher particulate intake compared to background sensors.
-                    <br>• <b>Facial Protection Efficiency:</b> Empirical audit revealed only 11% of drivers use certified N95 masks, while cloth coverings filter &lt;15% of fine exhaust particulates.
-                    <br>• <b>Epidemiological Correlation:</b> 84% reported eye burning and 72% dry cough, which correlates with $PM_{2.5}$ concentration spikes during morning/evening thermal inversions.
+                    <br>• <b style="color: #ecfdf5;">Shift Exposure Factor:</b> 8–12 hour open-cabin auto-rickshaw shifts experience 3.4x higher particulate intake compared to background sensors.
+                    <br>• <b style="color: #ecfdf5;">Facial Protection Efficiency:</b> Empirical audit revealed only 11% of drivers use certified N95 masks, while cloth coverings filter &lt;15% of fine exhaust particulates.
+                    <br>• <b style="color: #ecfdf5;">Epidemiological Correlation:</b> 84% reported eye burning and 72% dry cough, which correlates with $PM_{2.5}$ concentration spikes during morning/evening thermal inversions.
                 </p>
             </div>
             """, unsafe_allow_html=True)
@@ -1600,9 +1716,9 @@ if tab5 is not None:
 # -------------------------------------------------------------
 st.markdown("---")
 st.markdown("""
-<div style="text-align: center; color: #64748b; font-size: 11.5px; padding: 22px 0; border-top: 1px solid #e2e8f0; margin-top: 24px;">
-    <b style="color: #064e3b;">PRAVAAH</b> Air Quality & Civic Intelligence Platform &nbsp;|&nbsp; 
+<div style="text-align: center; color: #64748b; font-size: 11.5px; padding: 24px 0 16px 0; border-top: 1px solid rgba(52, 211, 153, 0.15); margin-top: 32px;">
+    <b style="color: #34d399; letter-spacing: 0.5px;">PRAVAAH</b> Air Quality & Civic Intelligence Platform &nbsp;|&nbsp; 
     University of Mumbai NEP 2020 Community Engagement Project (CEP) &nbsp;|&nbsp; 
-    <a href="?admin=true" style="color: #0284c7; font-weight: 600; text-decoration: none;">🔒 Institutional Console</a>
+    <a href="?admin=true" style="color: #10b981; font-weight: 700; text-decoration: none; padding: 3px 10px; border-radius: 6px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(52, 211, 153, 0.25);">🔒 Institutional Console</a>
 </div>
 """, unsafe_allow_html=True)
