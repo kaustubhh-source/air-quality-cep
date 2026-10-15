@@ -534,6 +534,17 @@ if "target_lat" not in st.session_state or not is_within_india(st.session_state.
     st.session_state["target_lon"] = init_lon
     st.session_state["target_name"] = init_name
 
+def get_clean_city_name(full_name: str) -> str:
+    """Extracts clean human-readable city or landmark name from full location string."""
+    if not full_name:
+        return "Local Area"
+    if "—" in full_name:
+        return full_name.split("—")[-1].split(",")[0].strip()
+    if "(" in full_name and ")" in full_name:
+        inner = full_name.split("(")[1].split(")")[0]
+        return inner.split(",")[0].strip()
+    return full_name.split(",")[0].strip()
+
 # -------------------------------------------------------------
 # 3. CPCB STANDARD SCALES & ADVISORIES
 # -------------------------------------------------------------
@@ -826,7 +837,7 @@ with tab1:
     render_cpcb_scale_bar(aqi_val)
 
     st.markdown("---")
-    target_city_name = st.session_state["target_name"].split(",")[0].strip()
+    target_city_name = get_clean_city_name(st.session_state["target_name"])
     st.markdown(f"#### 💨 Major Air Pollutants in **{target_city_name}**")
     
     pol_c1, pol_c2, pol_c3 = st.columns(3)
@@ -940,7 +951,7 @@ with tab1:
         st.caption(f"💡 **Data Alignment Note:** Lower numeric values indicate cleaner air. The safe outdoor window (**{opt_start_fmt} – {opt_end_fmt}**) highlights the 3-hour minimum pollution trough.")
 
     st.markdown("---")
-    target_city_name = st.session_state["target_name"].split(",")[0].strip()
+    target_city_name = get_clean_city_name(st.session_state["target_name"])
     st.markdown(f"### 🏡 Practical Health Directives & Protection Blueprint — **{target_city_name}**")
     st.caption("Actionable medical guidance, demographic protection strategies, and household safeguards based on CPCB AQI")
 
@@ -1280,7 +1291,7 @@ with tab4:
     # -------------------------------------------------------------
     # HEALTH ADVICE & CIGARETTE EQUIVALENCE FOR LOCATION (IMAGE 1)
     # -------------------------------------------------------------
-    target_city_name = st.session_state["target_name"].split(",")[0].strip()
+    target_city_name = get_clean_city_name(st.session_state["target_name"])
     st.markdown(f"### 🚬 Health Advice For People Living In **{target_city_name}**")
     
     city_pm25 = live_data.get('pm25', 45.0) if live_data else 45.0

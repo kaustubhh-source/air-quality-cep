@@ -357,27 +357,66 @@ POSTAL_CIRCLE_MAP = {
     "91": (28.6139, 77.2090, "Army Postal Service (APS Field Station)")
 }
 
+def clean_locality_token(text: str) -> str:
+    """Strips administrative suffixes to yield clean, natural locality/city names."""
+    if not text:
+        return ""
+    import re
+    t = re.sub(r'\b(ward|zone)\s*\d+\b', '', text, flags=re.IGNORECASE)
+    t = re.sub(r'\b\d+\s*(ward|zone)\b', '', t, flags=re.IGNORECASE)
+    stop = [
+        r'\bsubdistrict\b', r'\bdistrict\b', r'\bcity corporation\b', r'\bcorporation\b',
+        r'\bmunicipal corporation\b', r'\bmunicipality\b', r'\btaluka\b', r'\btehsil\b',
+        r'\bmandal\b', r'\bdivision\b', r'\bzone\b', r'\bward\b', r'\burban\b',
+        r'\brural\b', r'\bpost office\b', r'\bcircle\b', r'\bmetropolitan area\b', r'\bmunicipal\b'
+    ]
+    for s in stop:
+        t = re.sub(s, '', t, flags=re.IGNORECASE)
+    t = re.sub(r'^\d+\s+', '', t)
+    if len(t.split()) > 1:
+        t = re.sub(r'\b(city|central)\b', '', t, flags=re.IGNORECASE)
+    return ' '.join(t.split()).strip()
+
 def geocode_place(query: str):
     q_clean = query.strip()
     q_lower = q_clean.lower()
 
     # 0. 4-Tier Bulletproof Pan-India PIN Code Resolution Engine for EVERY 6-Digit Indian PIN
     if q_clean.isdigit() and len(q_clean) == 6:
-        # Tier 1: Nominatim Postal Code search
+        # Tier 1: Nominatim Postal Code search with structured addressdetails
         try:
-            url_pin = f"https://nominatim.openstreetmap.org/search?postalcode={q_clean}&country=India&format=json"
+            url_pin = f"https://nominatim.openstreetmap.org/search?postalcode={q_clean}&country=India&format=json&addressdetails=1"
             res = requests.get(url_pin, headers=HEADERS, timeout=4)
             if res.status_code == 200 and res.json():
                 item = res.json()[0]
                 lat = float(item["lat"])
                 lon = float(item["lon"])
-                raw_disp = item.get("display_name", "")
-                parts = [p.strip() for p in raw_disp.split(",") if p.strip() and not p.strip().isdigit() and "zone" not in p.strip().lower() and "ward" not in p.strip().lower()]
-                place_str = f"{parts[0]}, {parts[1]}" if len(parts) >= 2 else (parts[0] if parts else "India")
+                addr = item.get("address", {})
+                
+                city = clean_locality_token(addr.get("city") or addr.get("town") or addr.get("village") or addr.get("municipality"))
+                suburb = clean_locality_token(addr.get("suburb") or addr.get("neighbourhood") or addr.get("residential"))
+                if len(suburb) <= 2 or suburb.lower() in ["zone", "ward", "north", "south", "east", "west"]:
+                    suburb = ""
+                district = clean_locality_token(addr.get("state_district") or addr.get("county"))
+                state = addr.get("state", "India")
+                
+                if suburb and city and suburb.lower() != city.lower():
+                    place_str = f"{suburb}, {city}"
+                elif suburb and district and suburb.lower() != district.lower():
+                    place_str = f"{suburb}, {district}"
+                elif city and state:
+                    place_str = f"{city}, {state}"
+                elif district and state:
+                    place_str = f"{district}, {state}"
+                else:
+                    place_str = state
+                    
                 return {
                     "lat": lat,
                     "lon": lon,
-                    "display_name": f"PIN {q_clean} ({place_str})"
+                    "display_name": f"PIN {q_clean} — {place_str}",
+                    "city": city or district or state,
+                    "state": state
                 }
         except Exception:
             pass
@@ -385,13 +424,13 @@ def geocode_place(query: str):
         # Tier 2: India Post Public API Direct Fetch
         try:
             url_post = f"https://api.postalpincode.in/pincode/{q_clean}"
-            r_post = requests.get(url_post, headers=HEADERS, timeout=4)
+            r_post = requests.get(url_post, headers=HEADERS, timeout=3)
             if r_post.status_code == 200 and r_post.json():
                 data = r_post.json()[0]
                 if data.get("Status") == "Success" and data.get("PostOffice"):
                     po = data["PostOffice"][0]
-                    po_name = po.get("Name", "")
-                    district = po.get("District", "")
+                    po_name = clean_locality_token(po.get("Name", ""))
+                    district = clean_locality_token(po.get("District", ""))
                     state = po.get("State", "")
                     location_str = f"{po_name}, {district}, {state}, India"
                     url_g = f"https://nominatim.openstreetmap.org/search?q={urllib.parse.quote(location_str)}&format=json&limit=1"
@@ -401,7 +440,9 @@ def geocode_place(query: str):
                         return {
                             "lat": float(it["lat"]),
                             "lon": float(it["lon"]),
-                            "display_name": f"PIN {q_clean} ({po_name}, {district})"
+                            "display_name": f"PIN {q_clean} — {po_name}, {district}",
+                            "city": district or po_name,
+                            "state": state
                         }
         except Exception:
             pass
@@ -415,7 +456,7 @@ def geocode_place(query: str):
                 return {
                     "lat": float(item["lat"]),
                     "lon": float(item["lon"]),
-                    "display_name": f"PIN {q_clean} (India)"
+                    "display_name": f"PIN {q_clean} — India"
                 }
         except Exception:
             pass
@@ -428,7 +469,7 @@ def geocode_place(query: str):
             return {
                 "lat": c_lat,
                 "lon": c_lon,
-                "display_name": f"PIN {q_clean} ({c_name})"
+                "display_name": f"PIN {q_clean} — {c_name}"
             }
         elif prefix1 in ["1", "2", "3", "4", "5", "6", "7", "8", "9"]:
             reg_map = {
@@ -446,7 +487,7 @@ def geocode_place(query: str):
             return {
                 "lat": r_lat,
                 "lon": r_lon,
-                "display_name": f"PIN {q_clean} ({r_name})"
+                "display_name": f"PIN {q_clean} — {r_name}"
             }
 
     # 1. Instant Gazetteer Lookup for Indian Landmarks & Sub-cities
@@ -709,7 +750,11 @@ def generate_regional_fallback(lat: float, lon: float, location_name: str):
 @st.cache_data(ttl=600)
 def _parse_waqi_station_data(data: dict, lat: float, lon: float, location_name: str, dist_km: float):
     """Parses raw WAQI station payload into standardized CPCB telemetry dictionary."""
-    ground_aqi = int(data.get("aqi", 0))
+    raw_aqi = data.get("aqi")
+    try:
+        ground_aqi = int(raw_aqi)
+    except (ValueError, TypeError):
+        return None
     if ground_aqi <= 0 or ground_aqi >= 900:
         return None
 
@@ -780,53 +825,74 @@ def _parse_waqi_station_data(data: dict, lat: float, lon: float, location_name: 
         "source": f"Physical Ground CAAQMS Station ({clean_name})" if is_in_india else f"Ground Air Monitor ({clean_name})"
     }
 
+def extract_clean_search_keywords(location_name: str, lat: float = 0.0, lon: float = 0.0) -> list[str]:
+    """
+    Extracts high-priority search keywords from any Indian location string or coordinates.
+    Guarantees that city, district, and regional airshed tokens are extracted cleanly.
+    """
+    if not location_name:
+        return []
+    import re
+    # Remove PIN code prefixes (e.g. "PIN 411001", "PIN 400071")
+    clean = re.sub(r'PIN\s*\d*', '', location_name, flags=re.IGNORECASE)
+    # Remove brackets, hyphens, em-dashes
+    clean = re.sub(r'[()\[\]{}—–\-]', ' ', clean)
+    raw_tokens = re.split(r'[,;/]+', clean)
+    
+    stop_words = {
+        'india', 'subdistrict', 'district', 'city corporation', 'corporation',
+        'taluka', 'tehsil', 'division', 'post office', 'b.o', 's.o', 'h.o',
+        'state', 'circle', 'zone', 'ward', 'north', 'south', 'east', 'west',
+        'central', 'city', 'rural', 'urban', 'area', 'region', 'metropolitan',
+        'nagar', 'colony', 'road', 'street', 'layout', 'enclave', 'block', 'sector'
+    }
+    
+    keywords = []
+    for t in raw_tokens:
+        t_clean = clean_locality_token(t)
+        if not t_clean or t_clean.isdigit() or len(t_clean) < 3:
+            continue
+        if t_clean.lower() in stop_words:
+            continue
+        if t_clean.lower() not in [k.lower() for k in keywords]:
+            keywords.append(t_clean)
+        # Also add non-trivial individual words (e.g., from "Sampangirama Nagar" add "Sampangirama")
+        for part in t_clean.split():
+            if len(part) >= 4 and part.lower() not in stop_words and part.lower() not in [k.lower() for k in keywords]:
+                keywords.append(part)
+                
+    # If coordinates are provided and within India, append the nearest reference city from CPCB network
+    if lat != 0.0 and lon != 0.0 and is_within_india(lat, lon):
+        try:
+            df_st = fetch_pan_india_stations()
+            min_d = float("inf")
+            best_city = ""
+            for _, s_row in df_st.iterrows():
+                d = haversine_distance(lat, lon, float(s_row["Lat"]), float(s_row["Lon"]))
+                if d < min_d:
+                    min_d = d
+                    best_city = s_row["City"].split("(")[0].strip()
+            if best_city and best_city.lower() not in [k.lower() for k in keywords]:
+                keywords.append(best_city)
+        except Exception:
+            pass
+
+    return keywords
+
 @st.cache_data(ttl=600)
 def fetch_waqi_live_ground_sensor(lat: float, lon: float, location_name: str = ""):
     """
     Ingests real-time CPCB / MPCB / SAFAR physical ground station telemetry from WAQI/AQICN.
-    Employs direct station query followed by proximity radius search for maximum accuracy.
+    Employs intelligent keyword extraction and multi-candidate proximity radius search.
     """
     token = AQICN_TOKEN if AQICN_TOKEN else "f67762d5b7d7bb1892415cc3ea8865e61f2abd3d"
     
-    # Extract main city / area keywords from location_name
-    primary_city = location_name.split(",")[0].strip() if location_name else ""
-    secondary_city = location_name.split(",")[1].strip() if (location_name and "," in location_name) else ""
+    search_keywords = extract_clean_search_keywords(location_name, lat, lon)
     
-    # 1. Direct coordinate feed
-    urls_to_try = [
-        f"https://api.waqi.info/feed/geo:{lat};{lon}/?token={token}"
-    ]
-    if primary_city:
-        urls_to_try.append(f"https://api.waqi.info/feed/{urllib.parse.quote(primary_city)}/?token={token}")
-    if secondary_city and secondary_city.lower() not in ["india", ""]:
-        urls_to_try.append(f"https://api.waqi.info/feed/{urllib.parse.quote(secondary_city)}/?token={token}")
-
-    for url in urls_to_try:
-        try:
-            r = requests.get(url, headers=HEADERS, timeout=5)
-            if r.status_code == 200:
-                res_json = r.json()
-                if res_json.get("status") == "ok" and "data" in res_json:
-                    data = res_json["data"]
-                    if isinstance(data, dict):
-                        city_info = data.get("city", {})
-                        st_geo = city_info.get("geo", [lat, lon])
-                        st_lat, st_lon = (float(st_geo[0]), float(st_geo[1])) if len(st_geo) >= 2 else (lat, lon)
-                        dist_km = haversine_distance(lat, lon, st_lat, st_lon)
-                        if dist_km <= 30.0:
-                            parsed = _parse_waqi_station_data(data, lat, lon, location_name, dist_km)
-                            if parsed:
-                                return parsed
-        except Exception:
-            pass
-
-    # 2. Proximity search across physical stations in target airshed
-    search_keywords = []
-    if primary_city:
-        search_keywords.append(primary_city)
-    if secondary_city and secondary_city.lower() not in ["india", ""]:
-        search_keywords.append(secondary_city)
-
+    # 1. Proximity candidate search across physical stations in target airshed
+    candidates = []
+    seen_uids = set()
+    
     for kw in search_keywords:
         try:
             s_url = f"https://api.waqi.info/search/?keyword={urllib.parse.quote(kw)}&token={token}"
@@ -835,33 +901,83 @@ def fetch_waqi_live_ground_sensor(lat: float, lon: float, location_name: str = "
                 s_json = s_res.json()
                 if s_json.get("status") == "ok":
                     hits = s_json.get("data", [])
-                    station_candidates = []
                     for h in hits:
-                        geo = h.get("station", {}).get("geo", [])
                         uid = h.get("uid")
-                        if uid and len(geo) >= 2:
+                        geo = h.get("station", {}).get("geo", [])
+                        if uid and uid not in seen_uids and len(geo) >= 2:
                             try:
                                 s_lat, s_lon = float(geo[0]), float(geo[1])
                                 d = haversine_distance(lat, lon, s_lat, s_lon)
-                                if d <= 45.0:
-                                    station_candidates.append((d, uid))
+                                if d <= 65.0:
+                                    seen_uids.add(uid)
+                                    candidates.append((d, uid, h.get("station", {}).get("name", "")))
                             except Exception:
                                 pass
-                    if station_candidates:
-                        station_candidates.sort(key=lambda x: x[0])
-                        for d_km, uid in station_candidates[:4]:
-                            f_url = f"https://api.waqi.info/feed/@{uid}/?token={token}"
-                            f_res = requests.get(f_url, headers=HEADERS, timeout=5)
-                            if f_res.status_code == 200:
-                                f_json = f_res.json()
-                                if f_json.get("status") == "ok" and "data" in f_json:
-                                    data = f_json["data"]
-                                    if isinstance(data, dict):
-                                        parsed = _parse_waqi_station_data(data, lat, lon, location_name, d_km)
-                                        if parsed:
-                                            return parsed
         except Exception:
             pass
+
+    # If no stations within 65 km, extend airshed search to 85 km
+    if not candidates:
+        for kw in search_keywords:
+            try:
+                s_url = f"https://api.waqi.info/search/?keyword={urllib.parse.quote(kw)}&token={token}"
+                s_res = requests.get(s_url, headers=HEADERS, timeout=5)
+                if s_res.status_code == 200:
+                    s_json = s_res.json()
+                    if s_json.get("status") == "ok":
+                        hits = s_json.get("data", [])
+                        for h in hits:
+                            uid = h.get("uid")
+                            geo = h.get("station", {}).get("geo", [])
+                            if uid and uid not in seen_uids and len(geo) >= 2:
+                                try:
+                                    s_lat, s_lon = float(geo[0]), float(geo[1])
+                                    d = haversine_distance(lat, lon, s_lat, s_lon)
+                                    if d <= 85.0:
+                                        seen_uids.add(uid)
+                                        candidates.append((d, uid, h.get("station", {}).get("name", "")))
+                                except Exception:
+                                    pass
+            except Exception:
+                pass
+
+    if candidates:
+        candidates.sort(key=lambda x: x[0])
+        # Try top 6 closest candidates until one returns valid live ground telemetry
+        for d_km, uid, _ in candidates[:6]:
+            try:
+                f_url = f"https://api.waqi.info/feed/@{uid}/?token={token}"
+                f_res = requests.get(f_url, headers=HEADERS, timeout=5)
+                if f_res.status_code == 200:
+                    f_json = f_res.json()
+                    if f_json.get("status") == "ok" and "data" in f_json:
+                        data = f_json["data"]
+                        if isinstance(data, dict):
+                            parsed = _parse_waqi_station_data(data, lat, lon, location_name, d_km)
+                            if parsed and parsed.get("aqi", 0) > 0:
+                                return parsed
+            except Exception:
+                pass
+
+    # 2. Coordinate fallback (only accept if physical station is within 25 km to avoid Najafgarh mis-routing)
+    try:
+        geo_url = f"https://api.waqi.info/feed/geo:{lat};{lon}/?token={token}"
+        g_res = requests.get(geo_url, headers=HEADERS, timeout=5)
+        if g_res.status_code == 200:
+            g_json = g_res.json()
+            if g_json.get("status") == "ok" and "data" in g_json:
+                data = g_json["data"]
+                if isinstance(data, dict):
+                    city_info = data.get("city", {})
+                    st_geo = city_info.get("geo", [lat, lon])
+                    st_lat, st_lon = (float(st_geo[0]), float(st_geo[1])) if len(st_geo) >= 2 else (lat, lon)
+                    dist_km = haversine_distance(lat, lon, st_lat, st_lon)
+                    if dist_km <= 25.0:
+                        parsed = _parse_waqi_station_data(data, lat, lon, location_name, dist_km)
+                        if parsed and parsed.get("aqi", 0) > 0:
+                            return parsed
+    except Exception:
+        pass
 
     return None
 
@@ -1101,19 +1217,23 @@ def fetch_pan_india_stations(live_telemetry: dict = None):
         lon = float(live_telemetry.get("lon", 0.0))
         
         if live_aqi > 0 and loc_name:
-            primary_city = loc_name.split(",")[0].strip()
+            kws = extract_clean_search_keywords(loc_name, lat, lon)
+            clean_city = kws[0] if kws else loc_name.split(",")[0].strip()
             matched = False
             for idx, row in df.iterrows():
                 city_clean = row["City"].split("(")[0].strip().lower()
-                if primary_city.lower() in city_clean or city_clean in primary_city.lower():
-                    df.at[idx, "AQI"] = live_aqi
-                    matched = True
+                for kw in kws:
+                    if kw.lower() in city_clean or city_clean in kw.lower():
+                        df.at[idx, "AQI"] = live_aqi
+                        matched = True
+                        break
+                if matched:
                     break
             
             if not matched:
                 state_name = loc_name.split(",")[-1].strip() if "," in loc_name else "India"
                 new_row = pd.DataFrame([{
-                    "City": primary_city,
+                    "City": clean_city,
                     "Lat": lat if lat != 0.0 else 19.0760,
                     "Lon": lon if lon != 0.0 else 72.8777,
                     "AQI": live_aqi,
