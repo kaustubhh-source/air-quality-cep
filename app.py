@@ -872,63 +872,57 @@ with tab1:
     # Fetch 24-Hour Diurnal Trend Curve first to calculate dynamic safe window
     df_hourly = fetch_hourly_trend(st.session_state["target_lat"], st.session_state["target_lon"])
 
-    # Calculate dynamic 3-hour minimum AQI window
-    opt_start_fmt = "1:00 PM"
-    opt_end_fmt = "4:00 PM"
-    opt_avg_aqi = 65
-    if not df_hourly.empty and len(df_hourly) >= 3:
-        window_size = 3
-        min_avg = float('inf')
-        best_idx = 0
-        for i in range(len(df_hourly) - window_size + 1):
-            win_avg = df_hourly['Hourly_AQI'].iloc[i:i+window_size].mean()
-            if win_avg < min_avg:
-                min_avg = win_avg
-                best_idx = i
+    # Dynamic Daily Activity & Routine Advisory Cards (anchored to current AQI & diurnal conditions)
+    st.markdown("#### 🕒 Dynamic Daily Activity & Commute Planner")
+    
+    if aqi_val <= 100:
+        m_icon, m_title, m_color, m_border = "✅", "FAVORABLE MORNING ROUTINE (06:30 – 09:00 AM)", "#34d399", "#10b981"
+        m_desc = "<b>Clean Morning Air:</b> Low particulate concentration. Excellent conditions for morning jogs, cycling, and outdoor workouts."
         
-        def format_hour_str(t_str):
-            try:
-                h = int(str(t_str).split(':')[0])
-                if h == 0:
-                    return "12:00 AM"
-                elif h < 12:
-                    return f"{h}:00 AM"
-                elif h == 12:
-                    return "12:00 PM"
-                else:
-                    return f"{h-12}:00 PM"
-            except Exception:
-                return str(t_str)
+        n_icon, n_title, n_color, n_border = "☀️", "MIDDAY VENTILATION & SOLAR WINDOW (11:30 AM – 03:00 PM)", "#38bdf8", "#0ea5e9"
+        n_desc = "<b>Solar Mixing Active:</b> Atmospheric dispersion remains favorable. Good for outdoor errands and commute; maintain hydration."
+        
+        e_icon, e_title, e_color, e_border = "✅", "EVENING RECREATION & COMMUTE (05:30 – 08:00 PM)", "#34d399", "#10b981"
+        e_desc = "<b>Satisfactory Air:</b> Normal outdoor activities, sports, and transit recommended. Minimal respiratory risk."
+    elif aqi_val <= 200:
+        m_icon, m_title, m_color, m_border = "⚠️", "EARLY MORNING INVERSION (06:00 – 08:00 AM)", "#fbbf24", "#f59e0b"
+        m_desc = "<b>Surface Inversion Precaution:</b> Nocturnal cooling traps ground exhaust. Prefer light walking after 07:30 AM; sensitive groups exercise indoors."
+        
+        n_icon, n_title, n_color, n_border = "☀️", "MIDDAY SOLAR DISPERSION (11:00 AM – 03:30 PM)", "#fbbf24", "#f59e0b"
+        n_desc = "<b>Ozone & Heat Notice:</b> Particulate dispersion improves, but sunlight drives photochemical ozone. Avoid heavy outdoor cardio in direct midday heat."
+        
+        e_icon, e_title, e_color, e_border = "⚠️", "EVENING RUSH-HOUR PEAK (06:00 – 08:30 PM)", "#fb923c", "#f97316"
+        e_desc = "<b>Traffic Exhaust Buildup:</b> Heavy commuter traffic elevates local PM2.5 along arterial roads. Keep windows closed in vehicles."
+    else:
+        m_icon, m_title, m_color, m_border = "⛔", "SEVERE MORNING SMOG INVERSION (06:00 – 08:30 AM)", "#f87171", "#ef4444"
+        m_desc = "<b>High Pollution Danger:</b> Inversion layer traps dense soot and PM. Strictly avoid outdoor jogging, running, and cycling."
+        
+        n_icon, n_title, n_color, n_border = "⚠️", "MIDDAY AMBIENT EXPOSURE (11:30 AM – 03:00 PM)", "#f87171", "#ef4444"
+        n_desc = "<b>Unhealthy Air Quality:</b> Ambient particulates remain elevated. Minimize outdoor exposure; wear N95/N99 respirators if outside."
+        
+        e_icon, e_title, e_color, e_border = "⛔", "EVENING SMOG ACCUMULATION (05:30 – 09:00 PM)", "#f87171", "#ef4444"
+        e_desc = "<b>Severe Commute Inversion:</b> Heavy diesel exhaust and cool ground air trigger toxic particulate peaks. Vulnerable citizens remain indoors."
 
-        start_t = df_hourly['Time'].iloc[best_idx]
-        start_h = int(str(start_t).split(':')[0])
-        end_h = (start_h + 3) % 24
-        opt_start_fmt = format_hour_str(start_t)
-        opt_end_fmt = format_hour_str(f"{end_h:02d}:00")
-        opt_avg_aqi = int(round(min_avg))
-
-    # Dynamic Safe-Slot Finder Cards
-    st.markdown("#### 🕒 Dynamic Daily Routine Safe-Slot Finder")
     slot1, slot2, slot3 = st.columns(3)
     with slot1:
-        st.markdown("""
-        <div style="background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.25); border-left: 4px solid #f43f5e; border-radius: 12px; padding: 16px 18px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
-            <div style="font-size: 12.5px; font-weight: 800; color: #fca5a5; letter-spacing: 0.3px;">❌ EARLY MORNING INVERSION (06:00 – 07:30 AM)</div>
-            <p style="font-size: 12px; color: #cbd5e1; margin-top: 8px; line-height: 1.5; margin-bottom: 0;"><b>High Smog Risk:</b> Nocturnal thermal inversion traps vehicular exhaust near the ground. Avoid outdoor jogging and cardio.</p>
+        st.markdown(f"""
+        <div style="background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); border-left: 4px solid {m_border}; border-radius: 12px; padding: 16px 18px; box-shadow: 0 4px 18px rgba(0,0,0,0.3); height: 100%;">
+            <div style="font-size: 12px; font-weight: 800; color: {m_color}; letter-spacing: 0.3px;">{m_icon} {m_title}</div>
+            <p style="font-size: 12px; color: #cbd5e1; margin-top: 8px; line-height: 1.5; margin-bottom: 0;">{m_desc}</p>
         </div>
         """, unsafe_allow_html=True)
     with slot2:
         st.markdown(f"""
-        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-left: 4px solid #10b981; border-radius: 12px; padding: 16px 18px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
-            <div style="font-size: 12.5px; font-weight: 800; color: #34d399; letter-spacing: 0.3px;">✅ SAFE OUTDOOR WINDOW ({opt_start_fmt} – {opt_end_fmt})</div>
-            <p style="font-size: 12px; color: #ecfdf5; margin-top: 8px; line-height: 1.5; margin-bottom: 0;"><b>Cleanest Daily Trough (Avg AQI ~{opt_avg_aqi}):</b> Solar boundary layer height expands upward, diluting pollution. Ideal for errands & workouts.</p>
+        <div style="background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); border-left: 4px solid {n_border}; border-radius: 12px; padding: 16px 18px; box-shadow: 0 4px 18px rgba(0,0,0,0.3); height: 100%;">
+            <div style="font-size: 12px; font-weight: 800; color: {n_color}; letter-spacing: 0.3px;">{n_icon} {n_title}</div>
+            <p style="font-size: 12px; color: #cbd5e1; margin-top: 8px; line-height: 1.5; margin-bottom: 0;">{n_desc}</p>
         </div>
         """, unsafe_allow_html=True)
     with slot3:
-        st.markdown("""
-        <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-left: 4px solid #f59e0b; border-radius: 12px; padding: 16px 18px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
-            <div style="font-size: 12.5px; font-weight: 800; color: #fbbf24; letter-spacing: 0.3px;">❌ EVENING TRAFFIC PEAK (18:00 – 20:30 PM)</div>
-            <p style="font-size: 12px; color: #cbd5e1; margin-top: 8px; line-height: 1.5; margin-bottom: 0;"><b>Heavy Commute Smog:</b> Dense diesel emissions combined with cooling surface temperatures cause sharp particulate spikes.</p>
+        st.markdown(f"""
+        <div style="background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); border-left: 4px solid {e_border}; border-radius: 12px; padding: 16px 18px; box-shadow: 0 4px 18px rgba(0,0,0,0.3); height: 100%;">
+            <div style="font-size: 12px; font-weight: 800; color: {e_color}; letter-spacing: 0.3px;">{e_icon} {e_title}</div>
+            <p style="font-size: 12px; color: #cbd5e1; margin-top: 8px; line-height: 1.5; margin-bottom: 0;">{e_desc}</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -953,7 +947,7 @@ with tab1:
             margin=dict(l=20, r=20, t=35, b=20)
         )
         st.plotly_chart(fig_hourly, use_container_width=True, config={"displayModeBar": False, "responsive": True})
-        st.caption(f"💡 **Data Alignment Note:** Lower numeric values indicate cleaner air. The safe outdoor window (**{opt_start_fmt} – {opt_end_fmt}**) highlights the 3-hour minimum pollution trough.")
+        st.caption("💡 **Diurnal Trajectory Insight:** Real-time 24-hour CPCB NAQI trajectory capturing morning surface inversion, midday photochemical dispersion, and evening traffic accumulation.")
 
     st.markdown("---")
     target_city_name = get_clean_city_name(st.session_state["target_name"])
@@ -980,7 +974,7 @@ with tab1:
     elif aqi_val <= 200:
         sev_color = "#FFC000"
         status_title = "Moderate Air — Unhealthy for Sensitive Groups"
-        adv_fitness = f"Shift heavy outdoor workouts to the cleanest daily trough ({opt_start_fmt} – {opt_end_fmt}) or exercise indoors."
+        adv_fitness = "Avoid heavy outdoor cardio during peak traffic hours; prefer indoor workouts or early morning walks."
         adv_children = "Limit intense outdoor school sports sessions; move long PE activities indoors."
         adv_sensitive = "Reduce prolonged outdoor exertion. Use indoor air purifiers in bedrooms."
         adv_commuters = "Switch car air vents to Recirculation Mode; wear N95 mask on open roads."
