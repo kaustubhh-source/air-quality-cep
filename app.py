@@ -1288,37 +1288,34 @@ with tab3:
 # =============================================================
 with tab4:
     # -------------------------------------------------------------
-    # RESPIRATORY HEALTH & AMBIENT INHALATION DOSAGE FOR LOCATION
+    # HEALTH ADVICE & CIGARETTE EQUIVALENCE FOR LOCATION
     # -------------------------------------------------------------
     target_city_name = get_clean_city_name(st.session_state["target_name"])
-    st.markdown(f"### 🩺 Respiratory Health & Inhalation Dosage Advisory for **{target_city_name}**")
+    st.markdown(f"### 🚬 Health Advice & Cigarette Equivalence for **{target_city_name}**")
     
     city_pm25 = live_data.get('pm25', 45.0) if live_data else 45.0
-    # Human tidal respiration: ~15 m³ of air inhaled per adult per day
-    daily_pm25_dose = round(city_pm25 * 15.0, 1)  # µg / day
-    weekly_pm25_dose = round((daily_pm25_dose * 7.0) / 1000.0, 2)  # mg / week
-    monthly_pm25_dose = round((daily_pm25_dose * 30.0) / 1000.0, 2)  # mg / month
-    who_guideline = 15.0  # WHO 24-hr PM2.5 threshold (15 µg/m³)
-    who_ratio = round(city_pm25 / who_guideline, 1)
+    daily_cigs_loc = max(0.1, round(city_pm25 / 22.0, 1))
+    weekly_cigs_loc = round(daily_cigs_loc * 7.0, 1)
+    monthly_cigs_loc = round(daily_cigs_loc * 30.0, 1)
 
     c1_c1, c1_c2, c1_c3 = st.columns([2, 1, 1])
     with c1_c1:
         st.markdown(f"""
-        <div style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.25); border-left: 4.5px solid #0ea5e9; border-radius: 12px; padding: 18px 20px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
+        <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-left: 4.5px solid #ef4444; border-radius: 12px; padding: 18px 20px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
             <div style="display: flex; align-items: center; justify-content: space-between;">
                 <div>
-                    <div style="font-size: 11px; color: #7dd3fc; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">Daily Ambient Particulate Intake</div>
-                    <div style="font-size: 36px; font-weight: 900; color: #38bdf8; line-height: 1.1; margin-top: 4px; text-shadow: 0 0 16px rgba(14, 165, 233, 0.3);">
-                        {daily_pm25_dose:,.1f} <span style="font-size: 14px; color: #bae6fd; font-weight: 600;">µg / day</span>
+                    <div style="font-size: 11px; color: #fca5a5; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">Ambient Particulate Inhalation</div>
+                    <div style="font-size: 36px; font-weight: 900; color: #f87171; line-height: 1.1; margin-top: 4px; text-shadow: 0 0 16px rgba(239, 68, 68, 0.3);">
+                        {daily_cigs_loc} <span style="font-size: 14px; color: #fca5a5; font-weight: 600;">Cigarettes / day</span>
                     </div>
                 </div>
-                <div style="font-size: 38px; filter: drop-shadow(0 0 10px rgba(14, 165, 233, 0.4));">🫁</div>
+                <div style="font-size: 38px; filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.4));">🚬</div>
             </div>
             <div style="font-size: 13px; color: #ecfdf5; margin-top: 10px; font-weight: 500; line-height: 1.5;">
-                An adult inhaling ~15 m³ air/day in <b>{target_city_name}</b> absorbs ~<b>{daily_pm25_dose:,.1f} µg</b> of fine particulate matter ({who_ratio}× the WHO 24h safety limit of 15 µg/m³).
+                Breathing the ambient air in <b>{target_city_name}</b> is equivalent to smoking <b>{daily_cigs_loc}</b> cigarettes daily.
             </div>
-            <div style="font-size: 11px; color: #94a3b8; margin-top: 8px; border-top: 1px solid rgba(14, 165, 233, 0.2); padding-top: 6px;">
-                Reference Model: <i>WHO Ambient Air Quality Guidelines (2021) & CPCB Adult Tidal Respiration Baseline (15 m³/day)</i>
+            <div style="font-size: 11px; color: #94a3b8; margin-top: 8px; border-top: 1px solid rgba(239, 68, 68, 0.2); padding-top: 6px;">
+                Reference Model: <i>Berkeley Earth Particulate Exposure (22 µg/m³ PM2.5 ≈ 1 cigarette equivalent | Current PM2.5: {city_pm25:.1f} µg/m³)</i>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1326,16 +1323,16 @@ with tab4:
         st.markdown(f"""
         <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-left: 4.5px solid #f59e0b; border-radius: 12px; text-align: center; padding: 18px 12px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
             <div style="font-size: 11px; color: #fbbf24; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Weekly Cumulative</div>
-            <div style="font-size: 28px; font-weight: 900; color: #fbbf24; margin: 4px 0; text-shadow: 0 0 12px rgba(245, 158, 11, 0.25);">{weekly_pm25_dose}</div>
-            <div style="font-size: 11.5px; color: #cbd5e1; font-weight: 600;">mg / Week</div>
+            <div style="font-size: 28px; font-weight: 900; color: #fbbf24; margin: 4px 0; text-shadow: 0 0 12px rgba(245, 158, 11, 0.25);">{weekly_cigs_loc}</div>
+            <div style="font-size: 11.5px; color: #cbd5e1; font-weight: 600;">Cigarettes / Week</div>
         </div>
         """, unsafe_allow_html=True)
     with c1_c3:
         st.markdown(f"""
         <div style="background: rgba(249, 115, 22, 0.08); border: 1px solid rgba(249, 115, 22, 0.25); border-left: 4.5px solid #f97316; border-radius: 12px; text-align: center; padding: 18px 12px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
             <div style="font-size: 11px; color: #fb923c; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Monthly Cumulative</div>
-            <div style="font-size: 28px; font-weight: 900; color: #fb923c; margin: 4px 0; text-shadow: 0 0 12px rgba(249, 115, 22, 0.25);">{monthly_pm25_dose}</div>
-            <div style="font-size: 11.5px; color: #cbd5e1; font-weight: 600;">mg / Month</div>
+            <div style="font-size: 28px; font-weight: 900; color: #fb923c; margin: 4px 0; text-shadow: 0 0 12px rgba(249, 115, 22, 0.25);">{monthly_cigs_loc}</div>
+            <div style="font-size: 11.5px; color: #cbd5e1; font-weight: 600;">Cigarettes / Month</div>
         </div>
         """, unsafe_allow_html=True)
 
