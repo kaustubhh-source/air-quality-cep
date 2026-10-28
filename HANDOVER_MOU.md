@@ -31,7 +31,7 @@ This document constitutes the official **Project Handover Memorandum of Understa
 
 2. **Operational Responsibilities Transferred:**
    - **Daily Telemetry Dissemination:** Monitoring real-time CPCB ground telemetry across Indian metropolitan hubs and local municipal wards.
-   - **Civic Advisories & Emergency Alerts:** Utilizing the 1-Click WhatsApp Advisory Broadcast and Admin Security Console (Default PIN: `1234`) to issue public warning banners during high smog inversions.
+   - **Civic Advisories & Emergency Alerts:** Utilizing the 1-Click WhatsApp Advisory Broadcast and Admin Security Console (Institutional Authorization Key) to issue public warning banners during high smog inversions.
    - **Epidemiological Tracking:** Collecting citizen health observations (symptoms logged by drivers and residents) to maintain local health surveillance.
 
 ---
@@ -52,7 +52,7 @@ This document constitutes the official **Project Handover Memorandum of Understa
 |                                                                                   |
 | 3. Emergency Public Banner Dispatch (Tab 5 Admin Console):                        |
 |    - Access Institutional Console via URL query ?admin=true or footer link.       |
-|    - Authenticate with PIN 1234.                                                  |
+|    - Authenticate with the institutional authorization key.                       |
 |    - Type headline and click "Publish Live Banner".                               |
 |                                                                                   |
 | 4. Export Symptom Registry CSV:                                                   |

@@ -56,7 +56,7 @@ air-quality-cep/
 - **1-Click WhatsApp Advisory**: Broadcast real-time localized warnings directly to community WhatsApp groups.
 
 ### 🛡️ Admin Command Center
-- **Security PIN Gateway**: PIN `1234` protected admin console.
+- **Security Key Gateway**: Institutional key protected admin console.
 - **Emergency Civic Broadcasts**: Issue or revoke live emergency banner directives visible across all user sessions.
 - **Symptom Registry & CSV Export**: Detailed symptom log table and CSV download button.
 
