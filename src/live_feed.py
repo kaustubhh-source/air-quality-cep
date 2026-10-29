@@ -651,7 +651,11 @@ def fetch_live_air_quality_by_coords(lat: float, lon: float, location_name: str 
             sub_no2 = calculate_cpcb_subindex_no2(no2)
             sub_so2 = calculate_cpcb_subindex_so2(so2)
             sub_co  = calculate_cpcb_subindex_co(co_mg)
-            sub_o3  = calculate_cpcb_subindex_o3(o3)
+            # CPCB official NAQI defines Ozone (O3) on an 8-hour rolling average standard.
+            # Open-Meteo satellite models output 1-hour midday photochemical peak values which can spike unrealistically.
+            # Scale 1-hour peak to equivalent 8-hour exposure (standard atmospheric ratio ~0.48):
+            o3_8h = o3 * 0.48 if o3 > 80.0 else o3
+            sub_o3  = calculate_cpcb_subindex_o3(o3_8h)
 
             sub_map = {
                 "PM2.5": sub_p25,
@@ -725,8 +729,8 @@ def fetch_hourly_trend(lat: float, lon: float):
                     oz = float(ozone_vals[i]) if i < len(ozone_vals) else 20.0
                     u_aqi = int(us_aqi_vals[i]) if i < len(us_aqi_vals) else 0
                     s25 = calculate_cpcb_subindex_pm25(p25)
-                    s10 = calculate_cpcb_subindex_pm10(p10)
-                    soz = calculate_cpcb_subindex_o3(oz)
+                    oz_8h = oz * 0.48 if oz > 80.0 else oz
+                    soz = calculate_cpcb_subindex_o3(oz_8h)
                     cpcb_h = max(s25, s10, soz, u_aqi) if u_aqi > 0 else max(s25, s10, soz)
                     hourly_aqi_list.append(cpcb_h)
                 return pd.DataFrame({
